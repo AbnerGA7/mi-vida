@@ -1,44 +1,27 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-  useColorScheme,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, Alert } from 'react-native';
 
-import { BottomTabInset, Colors, Spacing } from '@/constants/theme';
+import { Badge, Body, Button, Card, Empty, Input, ListItem, Muted, Row, Screen, useModule, usePalette, type IconName } from '@/components/ui/kit';
 import { daysUntil } from '@/lib/brain/dates';
 import { pickFile, processFile, scanWithCamera, type PickedFile } from '@/lib/brain/extract';
-import {
-  askDocuments,
-  deleteDocument,
-  listDocuments,
-  saveDocument,
-  type Answer,
-  type Documento,
-} from '@/lib/brain/repository';
+import { askDocuments, deleteDocument, listDocuments, saveDocument, type Answer, type Documento } from '@/lib/brain/repository';
 
-const ROJO = '#D93025';
-const AMBAR = '#E8A317';
-
-function vencimiento(fecha: string | null) {
-  if (!fecha) return null;
-  const dias = daysUntil(fecha);
-  if (dias < 0) return { texto: `Venció hace ${-dias} días`, color: ROJO };
-  if (dias === 0) return { texto: 'Vence hoy', color: ROJO };
-  if (dias <= 30) return { texto: `Vence en ${dias} días`, color: AMBAR };
-  return { texto: `Vence el ${fecha}`, color: undefined };
-}
+const ICONO_DOC: Record<string, IconName> = {
+  Seguros: 'shield-check-outline',
+  Contratos: 'file-sign',
+  'Identidad y trámites': 'card-account-details-outline',
+  Salud: 'heart-pulse',
+  Vehículos: 'car-outline',
+  Hogar: 'home-outline',
+  'Finanzas e impuestos': 'bank-outline',
+  Estudios: 'school-outline',
+  'Notas personales': 'note-text-outline',
+};
 
 export default function CerebroScreen() {
-  const c = Colors[useColorScheme() === 'dark' ? 'dark' : 'light'];
+  const p = usePalette();
+  const m = useModule('cerebro');
   const [docs, setDocs] = useState<Documento[]>([]);
   const [procesando, setProcesando] = useState(false);
   const [pregunta, setPregunta] = useState('');
@@ -52,6 +35,15 @@ export default function CerebroScreen() {
       cargar();
     }, [cargar]),
   );
+
+  function vencimiento(fecha: string | null) {
+    if (!fecha) return null;
+    const dias = daysUntil(fecha);
+    if (dias < 0) return { texto: `Venció hace ${-dias} días`, color: p.danger };
+    if (dias === 0) return { texto: 'Vence hoy', color: p.danger };
+    if (dias <= 30) return { texto: `Vence en ${dias} días`, color: p.warning };
+    return { texto: `Vence el ${fecha}`, color: p.textSecondary };
+  }
 
   async function agregar(obtener: () => Promise<PickedFile | null>) {
     try {
@@ -86,106 +78,75 @@ export default function CerebroScreen() {
     ]);
   }
 
-  const card = [styles.card, { backgroundColor: c.backgroundElement }];
   const alertas = docs.filter((d) => d.fecha_vencimiento && daysUntil(d.fecha_vencimiento) <= 30);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={[styles.h1, { color: c.text }]}>🧠 Segundo cerebro</Text>
-
-        <View style={card}>
-          <Text style={[styles.h2, { color: c.text }]}>Pregúntame</Text>
-          <TextInput
-            value={pregunta}
-            onChangeText={setPregunta}
-            onSubmitEditing={preguntar}
-            placeholder="¿Cuándo vence mi SOAT?"
-            placeholderTextColor={c.textSecondary}
-            style={[styles.input, { color: c.text, borderColor: c.backgroundSelected }]}
-            returnKeyType="search"
-          />
-          <Pressable onPress={preguntar} disabled={pensando} style={[styles.button, { backgroundColor: c.text }]}>
-            {pensando ? (
-              <ActivityIndicator color={c.background} />
-            ) : (
-              <Text style={[styles.buttonLabel, { color: c.background }]}>Preguntar</Text>
-            )}
-          </Pressable>
-          {respuesta && (
-            <View style={{ gap: Spacing.one }}>
-              <Text style={{ color: c.text, fontSize: 16 }}>{respuesta.texto}</Text>
-              {respuesta.fuentes.map((f, i) => (
-                <Text key={f.id} style={{ color: c.textSecondary, fontSize: 12 }}>
-                  [{i + 1}] {f.nombre}
-                </Text>
-              ))}
-              {respuesta.source && (
-                <Text style={{ color: c.textSecondary, fontSize: 12 }}>🔒 Respondido con IA {respuesta.source}</Text>
-              )}
-            </View>
-          )}
-        </View>
-
-        {alertas.length > 0 && (
-          <View style={[card, { borderColor: AMBAR, borderWidth: 1 }]}>
-            <Text style={[styles.h2, { color: c.text }]}>⚠️ Por vencer</Text>
-            {alertas.map((d) => (
-              <Text key={d.id} style={{ color: vencimiento(d.fecha_vencimiento)?.color ?? c.text }}>
-                {d.nombre}: {vencimiento(d.fecha_vencimiento)?.texto}
-              </Text>
+    <Screen module="cerebro" icon="brain" title="Segundo cerebro" subtitle={`${docs.length} documento(s) guardados`}>
+      <Card title="Pregúntame" icon="chat-question-outline" accent={m.solid}>
+        <Input
+          icon="magnify"
+          value={pregunta}
+          onChangeText={setPregunta}
+          onSubmitEditing={preguntar}
+          placeholder="¿Cuándo vence mi SOAT?"
+          returnKeyType="search"
+        />
+        <Button label="Preguntar" icon="send" color={m.solid} loading={pensando} onPress={preguntar} />
+        {respuesta ? (
+          <Card style={{ backgroundColor: m.soft, borderColor: 'transparent' }}>
+            <Body>{respuesta.texto}</Body>
+            {respuesta.fuentes.map((f, i) => (
+              <Row key={f.id} gap={6}>
+                <Badge label={`[${i + 1}]`} color={m.solid} />
+                <Muted size={12}>{f.nombre}</Muted>
+              </Row>
             ))}
-          </View>
-        )}
+            {respuesta.source ? <Muted size={12}>🔒 Respondido con IA {respuesta.source}</Muted> : null}
+          </Card>
+        ) : null}
+      </Card>
 
-        <View style={styles.actions}>
-          <Pressable onPress={() => agregar(scanWithCamera)} style={[styles.button, styles.flex, { backgroundColor: c.text }]}>
-            <Text style={[styles.buttonLabel, { color: c.background }]}>📷 Escanear</Text>
-          </Pressable>
-          <Pressable onPress={() => agregar(pickFile)} style={[styles.button, styles.flex, { backgroundColor: c.backgroundSelected }]}>
-            <Text style={[styles.buttonLabel, { color: c.text }]}>📎 Subir archivo</Text>
-          </Pressable>
-        </View>
-        {procesando && (
-          <View style={styles.actions}>
-            <ActivityIndicator />
-            <Text style={{ color: c.textSecondary }}>Leyendo y clasificando…</Text>
-          </View>
-        )}
+      {alertas.length > 0 && (
+        <Card title="Por vencer" icon="alert-outline" accent={p.warning}>
+          {alertas.map((d) => {
+            const v = vencimiento(d.fecha_vencimiento)!;
+            return <ListItem key={d.id} icon="calendar-alert" iconColor={v.color} title={d.nombre} subtitle={v.texto} />;
+          })}
+        </Card>
+      )}
 
-        <View style={card}>
-          <Text style={[styles.h2, { color: c.text }]}>Mis documentos ({docs.length})</Text>
-          {docs.length === 0 && (
-            <Text style={{ color: c.textSecondary }}>Escanea tu SOAT, DNI, contrato de alquiler o póliza para empezar.</Text>
-          )}
-          {docs.map((d) => {
+      <Row gap={10}>
+        <Button label="Escanear" icon="camera-outline" color={m.solid} style={{ flex: 1 }} onPress={() => agregar(scanWithCamera)} />
+        <Button label="Subir" icon="paperclip" variant="secondary" style={{ flex: 1 }} onPress={() => agregar(pickFile)} />
+      </Row>
+      {procesando ? (
+        <Row style={{ justifyContent: 'center' }}>
+          <ActivityIndicator color={m.solid} />
+          <Muted>Leyendo y clasificando…</Muted>
+        </Row>
+      ) : null}
+
+      <Card title="Mis documentos" icon="folder-outline" accent={m.solid} right={<Badge label={String(docs.length)} color={m.solid} />}>
+        {docs.length === 0 ? (
+          <Empty icon="file-document-outline" text="Escanea tu SOAT, DNI, contrato de alquiler o póliza para empezar." />
+        ) : (
+          docs.map((d) => {
             const v = vencimiento(d.fecha_vencimiento);
             return (
-              <Pressable key={d.id} onLongPress={() => borrar(d)} style={styles.doc}>
-                <Text style={{ color: c.text, fontWeight: '600' }} numberOfLines={1}>{d.nombre}</Text>
-                <Text style={{ color: c.textSecondary, fontSize: 13 }} numberOfLines={2}>{d.resumen}</Text>
-                <Text style={{ color: c.textSecondary, fontSize: 12 }}>
-                  {d.categoria}
-                  {v && <Text style={{ color: v.color ?? c.textSecondary }}> · {v.texto}</Text>}
-                </Text>
-              </Pressable>
+              <ListItem
+                key={d.id}
+                icon={ICONO_DOC[d.categoria] ?? 'file-outline'}
+                iconColor={m.solid}
+                title={d.nombre}
+                subtitle={`${d.categoria}${d.resumen && d.resumen !== d.nombre ? ` · ${d.resumen}` : ''}`}
+                right={v ? <Badge label={v.texto.replace('Vence el ', '')} color={v.color} /> : undefined}
+                onLongPress={() => borrar(d)}
+              />
             );
-          })}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+          })
+        )}
+        {docs.length > 0 ? <Muted size={12}>Mantén presionado un documento para borrarlo</Muted> : null}
+      </Card>
+    </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  content: { padding: Spacing.three, gap: Spacing.three, paddingBottom: BottomTabInset + Spacing.four },
-  h1: { fontSize: 28, fontWeight: '700' },
-  h2: { fontSize: 18, fontWeight: '600' },
-  card: { borderRadius: 16, padding: Spacing.three, gap: Spacing.two },
-  input: { borderWidth: 1, borderRadius: 12, padding: Spacing.three, fontSize: 16 },
-  button: { borderRadius: 12, paddingVertical: Spacing.three, paddingHorizontal: Spacing.four, alignItems: 'center' },
-  buttonLabel: { fontSize: 16, fontWeight: '600' },
-  actions: { flexDirection: 'row', gap: Spacing.two, alignItems: 'center' },
-  flex: { flex: 1 },
-  doc: { paddingVertical: Spacing.two, gap: 2 },
-});
