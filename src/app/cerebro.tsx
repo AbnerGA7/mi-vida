@@ -1,8 +1,9 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert } from 'react-native';
+import { ActivityIndicator, Alert, View } from 'react-native';
 
-import { Badge, Body, Button, Card, Empty, Input, ListItem, Muted, Row, Screen, useModule, usePalette, type IconName } from '@/components/ui/kit';
+import { Badge, Body, Button, Card, Empty, Input, ListItem, MicButton, Muted, Row, Screen, useModule, usePalette, type IconName } from '@/components/ui/kit';
+import { speak, stopSpeaking, useDictation } from '@/lib/voice';
 import { daysUntil } from '@/lib/brain/dates';
 import {
   extractFromStored,
@@ -98,11 +99,19 @@ export default function CerebroScreen() {
     }
   }
 
-  async function preguntar() {
-    if (!pregunta.trim()) return;
+  // Si pregunté hablando, también respondo hablando.
+  const { escuchando, parcial, empezar, parar } = useDictation((texto) => {
+    setPregunta(texto);
+    preguntar(texto, true);
+  });
+
+  async function preguntar(texto = pregunta, conVoz = false) {
+    if (!texto.trim()) return;
     setPensando(true);
     try {
-      setRespuesta(await askDocuments(pregunta));
+      const r = await askDocuments(texto);
+      setRespuesta(r);
+      if (conVoz) speak(r.texto);
     } catch (e) {
       Alert.alert('No pude responder', e instanceof Error ? e.message : String(e));
     } finally {
@@ -149,15 +158,20 @@ export default function CerebroScreen() {
   return (
     <Screen module="cerebro" icon="brain" title="Segundo cerebro" subtitle={`${docs.length} documento(s) guardados`}>
       <Card title="Pregúntame" icon="chat-question-outline" accent={m.solid}>
-        <Input
-          icon="magnify"
-          value={pregunta}
-          onChangeText={setPregunta}
-          onSubmitEditing={preguntar}
-          placeholder="¿Cuándo vence mi SOAT?"
-          returnKeyType="search"
-        />
-        <Button label="Preguntar" icon="send" color={m.solid} loading={pensando} onPress={preguntar} />
+        <Row>
+          <View style={{ flex: 1 }}>
+            <Input
+              icon="magnify"
+              value={escuchando ? parcial : pregunta}
+              onChangeText={setPregunta}
+              onSubmitEditing={() => preguntar()}
+              placeholder={escuchando ? 'Te escucho…' : '¿Cuándo vence mi SOAT?'}
+              returnKeyType="search"
+            />
+          </View>
+          <MicButton escuchando={escuchando} color={m.solid} onPress={escuchando ? parar : empezar} />
+        </Row>
+        <Button label="Preguntar" icon="send" color={m.solid} loading={pensando} onPress={() => preguntar()} />
         {respuesta ? (
           <Card style={{ backgroundColor: m.soft, borderColor: 'transparent' }}>
             <Body>{respuesta.texto}</Body>
@@ -168,6 +182,10 @@ export default function CerebroScreen() {
               </Row>
             ))}
             {respuesta.source ? <Muted size={12}>🔒 Respondido con IA {respuesta.source}</Muted> : null}
+            <Row>
+              <Button label="Escuchar" icon="volume-high" variant="ghost" color={m.solid} onPress={() => speak(respuesta.texto)} />
+              <Button label="Callar" icon="volume-off" variant="ghost" color={m.solid} onPress={stopSpeaking} />
+            </Row>
           </Card>
         ) : null}
       </Card>
