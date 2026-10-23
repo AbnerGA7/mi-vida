@@ -6,7 +6,12 @@ export type Correo = { id: string; de: string; asunto: string; fragmento: string
 async function google<T>(token: string, url: string): Promise<T> {
   const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
   if (res.status === 401) throw new Error('TOKEN_EXPIRADO');
-  if (!res.ok) throw new Error(`Google respondió ${res.status}`);
+  if (!res.ok) {
+    // Incluyo el motivo que da Google (API no habilitada, permiso no otorgado…) para poder arreglarlo.
+    const body = await res.json().catch(() => null);
+    const servicio = url.includes('gmail') ? 'Gmail' : 'Calendar';
+    throw new Error(`${servicio} ${res.status}: ${body?.error?.message ?? 'sin detalle'}`);
+  }
   return res.json();
 }
 
