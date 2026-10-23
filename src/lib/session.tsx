@@ -4,7 +4,7 @@ import { AppState } from 'react-native';
 import { canUseBiometrics, unlockWithBiometrics } from '@/lib/auth/biometric';
 import { fetchGoogleUser, isAllowedEmail, type GoogleUser } from '@/lib/auth/google';
 import { LOCK_AFTER_MINUTES } from '@/lib/config';
-import { clearUser, loadUser, saveUser } from '@/lib/secure-store';
+import { clearUser, loadGoogleToken, loadUser, saveGoogleToken, saveUser } from '@/lib/secure-store';
 
 type Status = 'loading' | 'signedOut' | 'locked' | 'unlocked';
 
@@ -13,7 +13,7 @@ type Session = {
   user: GoogleUser | null;
   accessToken: string | null;
   error: string | null;
-  signIn: (accessToken: string) => Promise<void>;
+  signIn: (accessToken: string, expiresIn?: number) => Promise<void>;
   unlock: () => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -47,7 +47,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     return () => sub.remove();
   }, []);
 
-  const signIn = useCallback(async (token: string) => {
+  const signIn = useCallback(async (token: string, expiresIn?: number) => {
     setError(null);
     const googleUser = await fetchGoogleUser(token);
     if (!isAllowedEmail(googleUser.email)) {
@@ -59,6 +59,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       return;
     }
     await saveUser(googleUser);
+    await saveGoogleToken(token, expiresIn);
     setUser(googleUser);
     setAccessToken(token);
     setStatus('unlocked');
@@ -66,8 +67,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const unlock = useCallback(async () => {
     setError(null);
-    if (await unlockWithBiometrics()) setStatus('unlocked');
-    else setError('No se pudo verificar tu identidad.');
+    if (await unlockWithBiometrics()) {
+      // Si el token de Google sigue vigente, lo recupero para no pedir reconectar.
+      setAccessToken(await loadGoogleToken());
+      setStatus('unlocked');
+    } else {
+      setError('No se pudo verificar tu identidad.');
+    }
   }, []);
 
   const signOut = useCallback(async () => {
