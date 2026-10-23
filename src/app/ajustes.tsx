@@ -1,22 +1,19 @@
 import NetInfo from '@react-native-community/netinfo';
+import { Image } from 'expo-image';
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useState, type ReactNode } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View, useColorScheme } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useCallback, useState } from 'react';
+import { ActivityIndicator, Alert, View } from 'react-native';
 
-import { BottomTabInset, Colors, Spacing } from '@/constants/theme';
+import { Badge, Body, Button, Card, ListItem, Muted, Progress, Row, Screen, useModule, usePalette } from '@/components/ui/kit';
 import { askAi } from '@/lib/ai';
 import { hasCloudKey } from '@/lib/ai/cloud';
 import { deleteLocalModel, downloadLocalModel, hasSpaceForModel, isLocalModelReady } from '@/lib/ai/local';
 import { GEMINI_MODEL, LOCAL_MODEL } from '@/lib/config';
 import { useSession } from '@/lib/session';
 
-type C = Record<keyof (typeof Colors)['light'], string>;
-const VERDE = '#3A9D5D';
-const ROJO = '#D93025';
-
 export default function AjustesScreen() {
-  const c = Colors[useColorScheme() === 'dark' ? 'dark' : 'light'];
+  const p = usePalette();
+  const m = useModule('ajustes');
   const { user, accessToken, signOut } = useSession();
   const [listo, setListo] = useState<boolean | null>(null);
   const [progreso, setProgreso] = useState<number | null>(null);
@@ -88,109 +85,62 @@ export default function AjustesScreen() {
     ]);
   }
 
+  const estado = (ok: boolean, si: string, no: string) => <Badge label={ok ? si : no} color={ok ? p.success : p.danger} />;
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={[styles.h1, { color: c.text }]}>⚙️ Ajustes</Text>
-
-        <Card c={c} title="🤖 IA local (sin internet)">
-          <Text style={{ color: c.textSecondary }}>{LOCAL_MODEL.name} · ~2 GB · corre dentro del celular</Text>
-          {listo === null && <ActivityIndicator />}
-          {listo === true && <Status ok text="Descargada y lista" />}
-          {listo === false && progreso === null && <Status ok={false} text="No descargada" />}
-
-          {progreso !== null && (
-            <View style={{ gap: Spacing.one }}>
-              <View style={[styles.track, { backgroundColor: c.backgroundSelected }]}>
-                <View style={[styles.bar, { width: `${Math.round(progreso * 100)}%`, backgroundColor: c.text }]} />
-              </View>
-              <Text style={{ color: c.textSecondary }}>Descargando… {Math.round(progreso * 100)}% (no cierres la app)</Text>
-            </View>
+    <Screen module="ajustes" icon="cog-outline" title="Ajustes" subtitle="IA, cuenta y seguridad">
+      <Card>
+        <Row gap={14}>
+          {user?.picture ? (
+            <Image source={{ uri: user.picture }} style={{ width: 56, height: 56, borderRadius: 28 }} />
+          ) : (
+            <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: p.primarySoft }} />
           )}
-
-          {listo === false && progreso === null && <Button c={c} label="Descargar IA local" onPress={descargar} />}
-          {listo && <Button c={c} label="Borrar IA local" onPress={borrar} secondary />}
-        </Card>
-
-        <Card c={c} title="☁️ IA en la nube (con internet)">
-          <Text style={{ color: c.textSecondary }}>{GEMINI_MODEL} · plan gratis de Google</Text>
-          <Status ok={hasCloudKey()} text={hasCloudKey() ? 'Clave configurada' : 'Falta EXPO_PUBLIC_GEMINI_API_KEY en el .env'} />
-          <Text style={{ color: c.textSecondary, fontSize: 12 }}>
-            Finanzas y documentos siempre usan la IA local: esos datos nunca salen del celular.
-          </Text>
-        </Card>
-
-        <Card c={c} title="🧪 Probar la IA">
-          <View style={styles.row}>
-            <Button c={c} label="Modo híbrido" onPress={() => probar(false)} disabled={probando} flex />
-            <Button c={c} label="Solo local" onPress={() => probar(true)} disabled={probando} flex secondary />
+          <View style={{ flex: 1 }}>
+            <Body bold>{user?.name ?? 'Mi cuenta'}</Body>
+            <Muted>{user?.email}</Muted>
           </View>
-          {probando && <ActivityIndicator />}
-          {prueba && <Text style={{ color: c.text }}>{prueba}</Text>}
-        </Card>
+        </Row>
+      </Card>
 
-        <Card c={c} title="🔐 Cuenta">
-          <Text style={{ color: c.text }}>{user?.email}</Text>
-          <Status ok={!!accessToken} text={accessToken ? 'Google conectado' : 'Google desconectado (reconecta desde Hoy)'} />
-          <Status ok text="Base de datos cifrada con SQLCipher" />
-          <Status ok text="Bloqueo con huella al volver a la app" />
-          <Button c={c} label="Cerrar sesión" onPress={cerrarSesion} secondary />
-        </Card>
-      </ScrollView>
-    </SafeAreaView>
+      <Card title="IA local (sin internet)" icon="chip" accent={p.primary}>
+        <Muted>{LOCAL_MODEL.name} · ~2 GB · corre dentro del celular</Muted>
+        {listo === null ? <ActivityIndicator /> : null}
+        {listo !== null && progreso === null ? (
+          <Row>{estado(listo, 'Descargada y lista', 'No descargada')}</Row>
+        ) : null}
+        {progreso !== null ? (
+          <>
+            <Progress value={progreso} color={p.primary} height={10} />
+            <Muted>Descargando… {Math.round(progreso * 100)}% · no cierres la app</Muted>
+          </>
+        ) : null}
+        {listo === false && progreso === null ? <Button label="Descargar IA local" icon="download" onPress={descargar} /> : null}
+        {listo ? <Button label="Borrar IA local" icon="trash-can-outline" variant="danger" onPress={borrar} /> : null}
+      </Card>
+
+      <Card title="IA en la nube (con internet)" icon="cloud-outline" accent={p.primary}>
+        <Muted>{GEMINI_MODEL} · plan gratis de Google</Muted>
+        <Row>{estado(hasCloudKey(), 'Clave configurada', 'Falta la clave en el .env')}</Row>
+        <Muted size={12}>Finanzas y documentos siempre usan la IA local: esos datos nunca salen del celular.</Muted>
+      </Card>
+
+      <Card title="Probar la IA" icon="flask-outline" accent={p.primary}>
+        <Row gap={10}>
+          <Button label="Híbrida" icon="swap-horizontal" style={{ flex: 1 }} loading={probando} onPress={() => probar(false)} />
+          <Button label="Solo local" icon="cellphone-lock" variant="secondary" style={{ flex: 1 }} disabled={probando} onPress={() => probar(true)} />
+        </Row>
+        {prueba ? <Body>{prueba}</Body> : null}
+      </Card>
+
+      <Card title="Seguridad" icon="shield-lock-outline" accent={m.solid}>
+        <ListItem icon="google" iconColor={accessToken ? p.success : p.warning} title="Google" subtitle={accessToken ? 'Conectado · solo lectura' : 'Desconectado · reconecta desde Hoy'} />
+        <ListItem icon="database-lock-outline" iconColor={p.success} title="Base de datos cifrada" subtitle="SQLCipher con llave en el almacén seguro" />
+        <ListItem icon="fingerprint" iconColor={p.success} title="Bloqueo con huella" subtitle="Al abrir y al volver de segundo plano" />
+        <Button label="Cerrar sesión" icon="logout" variant="danger" onPress={cerrarSesion} />
+      </Card>
+
+      <Muted size={12}>Mi Vida · hecho por Abner con IA local + nube</Muted>
+    </Screen>
   );
 }
-
-function Status({ ok, text }: { ok: boolean; text: string }) {
-  return <Text style={{ color: ok ? VERDE : ROJO }}>{ok ? '●' : '○'} {text}</Text>;
-}
-
-function Card({ c, title, children }: { c: C; title: string; children: ReactNode }) {
-  return (
-    <View style={[styles.card, { backgroundColor: c.backgroundElement }]}>
-      <Text style={[styles.h2, { color: c.text }]}>{title}</Text>
-      {children}
-    </View>
-  );
-}
-
-function Button({
-  c,
-  label,
-  onPress,
-  disabled,
-  secondary,
-  flex,
-}: {
-  c: C;
-  label: string;
-  onPress: () => void;
-  disabled?: boolean;
-  secondary?: boolean;
-  flex?: boolean;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      style={[
-        styles.button,
-        flex && { flex: 1 },
-        { backgroundColor: secondary ? c.backgroundSelected : c.text, opacity: disabled ? 0.6 : 1 },
-      ]}>
-      <Text style={[styles.buttonLabel, { color: secondary ? c.text : c.background }]}>{label}</Text>
-    </Pressable>
-  );
-}
-
-const styles = StyleSheet.create({
-  content: { padding: Spacing.three, gap: Spacing.three, paddingBottom: BottomTabInset + Spacing.four },
-  h1: { fontSize: 28, fontWeight: '700' },
-  h2: { fontSize: 18, fontWeight: '600' },
-  card: { borderRadius: 16, padding: Spacing.three, gap: Spacing.two },
-  row: { flexDirection: 'row', gap: Spacing.two },
-  track: { height: 10, borderRadius: 5, overflow: 'hidden' },
-  bar: { height: 10, borderRadius: 5 },
-  button: { borderRadius: 12, paddingVertical: Spacing.three, alignItems: 'center' },
-  buttonLabel: { fontSize: 16, fontWeight: '600' },
-});
