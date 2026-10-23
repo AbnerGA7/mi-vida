@@ -1,19 +1,9 @@
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useState, type ReactNode } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-  useColorScheme,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useCallback, useState } from 'react';
+import { ActivityIndicator, Alert, Text, View } from 'react-native';
 
-import { BottomTabInset, Colors, Spacing } from '@/constants/theme';
+import { Badge, Body, Button, Card, Chip, Input, ListItem, Muted, Progress, Row, Screen, Stat, useModule, usePalette } from '@/components/ui/kit';
+import { Spacing } from '@/constants/theme';
 import type { Log } from '@/lib/coach/adjust';
 import type { Objetivo, Sexo } from '@/lib/coach/nutrition';
 import {
@@ -31,8 +21,6 @@ import {
 import { adaptToInjuries, buildRoutine, todaySession, type Ejercicio } from '@/lib/coach/routine';
 import { today } from '@/lib/finance/quick-capture';
 
-type C = Record<keyof (typeof Colors)['light'], string>;
-
 function isoWeek(d = new Date()) {
   const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
   const day = t.getUTCDay() || 7;
@@ -45,7 +33,6 @@ function isoWeek(d = new Date()) {
 const num = (s: string) => Number(s.replace(',', '.'));
 
 export default function CoachScreen() {
-  const c = Colors[useColorScheme() === 'dark' ? 'dark' : 'light'];
   const [profile, setProfile] = useState<Profile | null | undefined>(undefined);
 
   const cargar = useCallback(async () => setProfile(await getProfile()), []);
@@ -55,23 +42,25 @@ export default function CoachScreen() {
     }, [cargar]),
   );
 
+  const subtitle = profile
+    ? { grasa: 'Objetivo: bajar grasa', masa: 'Objetivo: ganar masa', mantener: 'Objetivo: mantener' }[profile.objetivo]
+    : 'Tu plan de gym y alimentación';
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: c.background }} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <Text style={[styles.h1, { color: c.text }]}>💪 Coach</Text>
-        {profile === undefined && <ActivityIndicator />}
-        {profile === null && <Onboarding c={c} onSaved={cargar} />}
-        {profile && <Plan c={c} profile={profile} onChanged={cargar} />}
-      </ScrollView>
-    </SafeAreaView>
+    <Screen module="coach" icon="dumbbell" title="Coach" subtitle={subtitle}>
+      {profile === undefined && <ActivityIndicator />}
+      {profile === null && <Onboarding onSaved={cargar} />}
+      {profile && <Plan profile={profile} onChanged={cargar} />}
+    </Screen>
   );
 }
 
-function Onboarding({ c, onSaved }: { c: C; onSaved: () => void }) {
+function Onboarding({ onSaved }: { onSaved: () => void }) {
+  const m = useModule('coach');
   const [f, setF] = useState({ edad: '', estatura: '', peso: '', dias: '4', lesiones: '', excluidos: '' });
   const [sexo, setSexo] = useState<Sexo>('hombre');
   const [objetivo, setObjetivo] = useState<Objetivo>('grasa');
-  const set = (k: keyof typeof f) => (v: string) => setF((p) => ({ ...p, [k]: v }));
+  const set = (k: keyof typeof f) => (v: string) => setF((prev) => ({ ...prev, [k]: v }));
 
   async function guardar() {
     const datos = { edad: num(f.edad), estatura_cm: num(f.estatura), peso_kg: num(f.peso), dias_por_semana: num(f.dias) };
@@ -84,27 +73,44 @@ function Onboarding({ c, onSaved }: { c: C; onSaved: () => void }) {
   }
 
   return (
-    <Card c={c} title="Cuéntame de ti">
-      <Field c={c} label="Edad" value={f.edad} onChange={set('edad')} numeric />
-      <Field c={c} label="Estatura (cm)" value={f.estatura} onChange={set('estatura')} numeric />
-      <Field c={c} label="Peso (kg)" value={f.peso} onChange={set('peso')} numeric />
-      <Field c={c} label="Días de gym por semana" value={f.dias} onChange={set('dias')} numeric />
-      <Chips c={c} options={['hombre', 'mujer'] as const} value={sexo} onChange={setSexo} />
-      <Chips
-        c={c}
-        options={['grasa', 'masa', 'mantener'] as const}
-        labels={{ grasa: 'Bajar grasa', masa: 'Ganar masa', mantener: 'Mantener' }}
-        value={objetivo}
-        onChange={setObjetivo}
-      />
-      <Field c={c} label="Lesiones (ej. rodilla, hombro)" value={f.lesiones} onChange={set('lesiones')} />
-      <Field c={c} label="Alimentos que no como" value={f.excluidos} onChange={set('excluidos')} />
-      <Button c={c} label="Calcular mi plan" onPress={guardar} />
+    <Card title="Cuéntame de ti" icon="account-heart-outline" accent={m.solid}>
+      <Row gap={10}>
+        <View style={{ flex: 1 }}>
+          <Input icon="cake-variant-outline" placeholder="Edad" value={f.edad} onChangeText={set('edad')} keyboardType="number-pad" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Input icon="human-male-height" placeholder="cm" value={f.estatura} onChangeText={set('estatura')} keyboardType="decimal-pad" />
+        </View>
+      </Row>
+      <Row gap={10}>
+        <View style={{ flex: 1 }}>
+          <Input icon="scale-bathroom" placeholder="kg" value={f.peso} onChangeText={set('peso')} keyboardType="decimal-pad" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Input icon="calendar-week" placeholder="Días/sem" value={f.dias} onChangeText={set('dias')} keyboardType="number-pad" />
+        </View>
+      </Row>
+      <Muted>Sexo</Muted>
+      <Row>
+        <Chip label="Hombre" selected={sexo === 'hombre'} color={m.solid} onPress={() => setSexo('hombre')} />
+        <Chip label="Mujer" selected={sexo === 'mujer'} color={m.solid} onPress={() => setSexo('mujer')} />
+      </Row>
+      <Muted>Objetivo</Muted>
+      <Row style={{ flexWrap: 'wrap' }}>
+        <Chip label="Bajar grasa" selected={objetivo === 'grasa'} color={m.solid} onPress={() => setObjetivo('grasa')} />
+        <Chip label="Ganar masa" selected={objetivo === 'masa'} color={m.solid} onPress={() => setObjetivo('masa')} />
+        <Chip label="Mantener" selected={objetivo === 'mantener'} color={m.solid} onPress={() => setObjetivo('mantener')} />
+      </Row>
+      <Input icon="bandage" placeholder="Lesiones (ej. rodilla, hombro)" value={f.lesiones} onChangeText={set('lesiones')} />
+      <Input icon="food-off-outline" placeholder="Alimentos que no como" value={f.excluidos} onChangeText={set('excluidos')} />
+      <Button label="Calcular mi plan" icon="calculator-variant-outline" color={m.solid} onPress={guardar} />
     </Card>
   );
 }
 
-function Plan({ c, profile, onChanged }: { c: C; profile: Profile; onChanged: () => void }) {
+function Plan({ profile, onChanged }: { profile: Profile; onChanged: () => void }) {
+  const p = usePalette();
+  const m = useModule('coach');
   const rutina = adaptToInjuries(buildRoutine(profile.dias_por_semana), profile.lesiones);
   const sesion = todaySession(rutina);
   const [hechas, setHechas] = useState<(Log & { serie: number })[]>([]);
@@ -113,10 +119,10 @@ function Plan({ c, profile, onChanged }: { c: C; profile: Profile; onChanged: ()
   const [generando, setGenerando] = useState(false);
 
   const cargar = useCallback(async () => {
-    const [s, a, m] = await Promise.all([setsToday(today()), listAdjustments(), lastMenu()]);
+    const [s, a, mn] = await Promise.all([setsToday(today()), listAdjustments(), lastMenu()]);
     setHechas(s);
     setAjustes(a);
-    setMenu(m);
+    setMenu(mn);
   }, []);
   useFocusEffect(
     useCallback(() => {
@@ -135,57 +141,65 @@ function Plan({ c, profile, onChanged }: { c: C; profile: Profile; onChanged: ()
     }
   }
 
+  const totalSeries = sesion.ejercicios.reduce((s, e) => s + e.series, 0);
+
   return (
     <>
-      <Card c={c} title="Mis números">
-        <Text style={[styles.big, { color: c.text }]}>{profile.calorias} kcal</Text>
-        <Text style={{ color: c.textSecondary }}>
-          Proteína {profile.proteina_g} g · Grasa {profile.grasa_g} g · Carbohidratos {profile.carbohidratos_g} g
+      <Card title="Mis números" icon="fire" accent={m.solid}>
+        <Text style={{ color: p.text, fontSize: 36, fontWeight: '800' }}>
+          {profile.calorias} <Text style={{ fontSize: 18, color: p.textSecondary }}>kcal/día</Text>
         </Text>
-        <Text style={{ color: c.textSecondary, fontSize: 12 }}>
-          Mifflin-St Jeor × actividad ({profile.dias_por_semana} días), ajustado a tu objetivo.
-        </Text>
+        <Row gap={10}>
+          <Stat label="Proteína" value={`${profile.proteina_g} g`} color={m.solid} />
+          <Stat label="Grasa" value={`${profile.grasa_g} g`} color={p.warning} />
+          <Stat label="Carbos" value={`${profile.carbohidratos_g} g`} color={p.primary} />
+        </Row>
+        <Muted size={12}>Mifflin-St Jeor × actividad ({profile.dias_por_semana} días), ajustado a tu objetivo.</Muted>
       </Card>
 
-      <Card c={c} title={`Hoy: ${sesion.nombre}`}>
-        <Text style={{ color: c.textSecondary, fontSize: 13 }}>
-          {rutina.division}. {rutina.motivo} Calienta 5-10 min antes.
-        </Text>
+      <Card
+        title={`Hoy: ${sesion.nombre}`}
+        icon="weight-lifter"
+        accent={m.solid}
+        right={<Badge label={`${hechas.length}/${totalSeries}`} color={hechas.length >= totalSeries ? p.success : m.solid} />}>
+        <Progress value={hechas.length / totalSeries} color={m.solid} />
+        <Muted>
+          {rutina.division}. Calienta 5-10 min antes.
+        </Muted>
         {sesion.ejercicios.map((ej) => (
-          <ExerciseRow
-            key={ej.nombre}
-            c={c}
-            ej={ej}
-            hechas={hechas.filter((h) => h.ejercicio === ej.nombre).length}
-            onLogged={cargar}
-          />
+          <ExerciseRow key={ej.nombre} ej={ej} hechas={hechas.filter((h) => h.ejercicio === ej.nombre).length} onLogged={cargar} />
         ))}
-        <Text style={{ color: c.textSecondary, fontSize: 12 }}>
-          Progresión: si completas todas las series en el tope de reps, sube 2.5 kg la próxima vez.
-        </Text>
+        <Muted size={12}>Progresión: si completas todas las series en el tope de reps, sube 2.5 kg la próxima vez.</Muted>
       </Card>
 
-      <WeeklyCheckin c={c} onSaved={() => Promise.all([cargar(), onChanged()])} />
+      <WeeklyCheckin onSaved={() => Promise.all([cargar(), onChanged()])} />
 
       {ajustes.length > 0 && (
-        <Card c={c} title="Ajustes a mi plan">
+        <Card title="Ajustes a mi plan" icon="tune-variant" accent={m.solid}>
           {ajustes.map((a, i) => (
-            <Text key={i} style={{ color: c.text }}>
-              {a.fecha} · {a.detalle}
-            </Text>
+            <ListItem key={i} icon="auto-fix" iconColor={m.solid} title={a.detalle} subtitle={a.fecha} />
           ))}
         </Card>
       )}
 
-      <Card c={c} title="Menú del día">
-        {menu && <Text style={{ color: c.text }}>{menu}</Text>}
-        <Button c={c} label={generando ? 'Armando…' : menu ? 'Otro menú' : 'Armar mi menú'} onPress={nuevoMenu} disabled={generando} />
+      <Card title="Menú del día" icon="silverware-fork-knife" accent={p.warning}>
+        {menu ? <Body>{menu}</Body> : <Muted>Te armo un menú peruano con tus macros y lo que no comes.</Muted>}
+        <Button
+          label={menu ? 'Otro menú' : 'Armar mi menú'}
+          icon="chef-hat"
+          variant={menu ? 'secondary' : 'primary'}
+          color={p.warning}
+          loading={generando}
+          onPress={nuevoMenu}
+        />
       </Card>
     </>
   );
 }
 
-function ExerciseRow({ c, ej, hechas, onLogged }: { c: C; ej: Ejercicio; hechas: number; onLogged: () => void }) {
+function ExerciseRow({ ej, hechas, onLogged }: { ej: Ejercicio; hechas: number; onLogged: () => void }) {
+  const p = usePalette();
+  const m = useModule('coach');
   const [peso, setPeso] = useState('');
   const [reps, setReps] = useState('');
   const [anterior, setAnterior] = useState<Log | null>(null);
@@ -203,32 +217,36 @@ function ExerciseRow({ c, ej, hechas, onLogged }: { c: C; ej: Ejercicio; hechas:
     onLogged();
   }
 
+  const completo = hechas >= ej.series;
+
   return (
-    <View style={styles.exercise}>
-      <View style={styles.row}>
-        <Text style={{ color: c.text, fontWeight: '600', flex: 1 }}>{ej.nombre}</Text>
-        <Text style={{ color: hechas >= ej.series ? '#3A9D5D' : c.textSecondary }}>
-          {hechas}/{ej.series}
-        </Text>
-      </View>
-      <Text style={{ color: c.textSecondary, fontSize: 12 }}>
-        {ej.series}×{ej.reps} · descanso {ej.descanso} · alternativa: {ej.alternativa}
-        {anterior ? ` · última vez ${anterior.peso_kg} kg × ${anterior.repeticiones}` : ''}
-      </Text>
-      <View style={styles.row}>
-        <TextInput value={peso} onChangeText={setPeso} placeholder="kg" keyboardType="decimal-pad" placeholderTextColor={c.textSecondary} style={[styles.small, { color: c.text, borderColor: c.backgroundSelected }]} />
-        <TextInput value={reps} onChangeText={setReps} placeholder="reps" keyboardType="number-pad" placeholderTextColor={c.textSecondary} style={[styles.small, { color: c.text, borderColor: c.backgroundSelected }]} />
-        <Pressable onPress={guardar} style={[styles.smallButton, { backgroundColor: c.text }]}>
-          <Text style={{ color: c.background, fontWeight: '600' }}>+ Serie</Text>
-        </Pressable>
-      </View>
+    <View style={{ gap: Spacing.two, paddingVertical: Spacing.two, borderTopWidth: 1, borderTopColor: p.border }}>
+      <ListItem
+        icon={completo ? 'check-circle' : 'dumbbell'}
+        iconColor={completo ? p.success : m.solid}
+        title={ej.nombre}
+        subtitle={`${ej.series}×${ej.reps} · ${ej.descanso}${anterior ? ` · última: ${anterior.peso_kg} kg × ${anterior.repeticiones}` : ''}`}
+        right={<Badge label={`${hechas}/${ej.series}`} color={completo ? p.success : m.solid} />}
+      />
+      {!completo && (
+        <Row gap={8}>
+          <View style={{ flex: 1 }}>
+            <Input placeholder="kg" value={peso} onChangeText={setPeso} keyboardType="decimal-pad" />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Input placeholder="reps" value={reps} onChangeText={setReps} keyboardType="number-pad" />
+          </View>
+          <Button label="Serie" icon="plus" color={m.solid} onPress={guardar} style={{ paddingHorizontal: Spacing.three }} />
+        </Row>
+      )}
     </View>
   );
 }
 
-function WeeklyCheckin({ c, onSaved }: { c: C; onSaved: () => void }) {
+function WeeklyCheckin({ onSaved }: { onSaved: () => void }) {
+  const m = useModule('coach');
   const [f, setF] = useState({ peso: '', energia: '', sueno: '', notas: '' });
-  const set = (k: keyof typeof f) => (v: string) => setF((p) => ({ ...p, [k]: v }));
+  const set = (k: keyof typeof f) => (v: string) => setF((prev) => ({ ...prev, [k]: v }));
 
   async function guardar() {
     const ajustes = await saveCheckin({
@@ -247,83 +265,18 @@ function WeeklyCheckin({ c, onSaved }: { c: C; onSaved: () => void }) {
   }
 
   return (
-    <Card c={c} title={`Registro semanal (${isoWeek()})`}>
-      <Field c={c} label="Peso promedio de la semana (kg)" value={f.peso} onChange={set('peso')} numeric />
-      <Field c={c} label="Energía (1-10)" value={f.energia} onChange={set('energia')} numeric />
-      <Field c={c} label="Sueño (1-10)" value={f.sueno} onChange={set('sueno')} numeric />
-      <Field c={c} label="Notas (dolor, cómo te sentiste)" value={f.notas} onChange={set('notas')} />
-      <Button c={c} label="Guardar y ajustar plan" onPress={guardar} />
+    <Card title="Registro semanal" icon="clipboard-check-outline" accent={m.solid} right={<Badge label={isoWeek()} color={m.solid} />}>
+      <Input icon="scale-bathroom" placeholder="Peso promedio de la semana (kg)" value={f.peso} onChangeText={set('peso')} keyboardType="decimal-pad" />
+      <Row gap={10}>
+        <View style={{ flex: 1 }}>
+          <Input icon="lightning-bolt-outline" placeholder="Energía 1-10" value={f.energia} onChangeText={set('energia')} keyboardType="number-pad" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Input icon="sleep" placeholder="Sueño 1-10" value={f.sueno} onChangeText={set('sueno')} keyboardType="number-pad" />
+        </View>
+      </Row>
+      <Input icon="note-edit-outline" placeholder="Notas (dolor, cómo te sentiste)" value={f.notas} onChangeText={set('notas')} />
+      <Button label="Guardar y ajustar plan" icon="content-save-outline" color={m.solid} onPress={guardar} />
     </Card>
   );
 }
-
-function Card({ c, title, children }: { c: C; title: string; children: ReactNode }) {
-  return (
-    <View style={[styles.card, { backgroundColor: c.backgroundElement }]}>
-      <Text style={[styles.h2, { color: c.text }]}>{title}</Text>
-      {children}
-    </View>
-  );
-}
-
-function Field({ c, label, value, onChange, numeric }: { c: C; label: string; value: string; onChange: (v: string) => void; numeric?: boolean }) {
-  return (
-    <TextInput
-      value={value}
-      onChangeText={onChange}
-      placeholder={label}
-      placeholderTextColor={c.textSecondary}
-      keyboardType={numeric ? 'decimal-pad' : 'default'}
-      style={[styles.input, { color: c.text, borderColor: c.backgroundSelected }]}
-    />
-  );
-}
-
-function Chips<T extends string>({
-  c,
-  options,
-  labels,
-  value,
-  onChange,
-}: {
-  c: C;
-  options: readonly T[];
-  labels?: Record<T, string>;
-  value: T;
-  onChange: (v: T) => void;
-}) {
-  return (
-    <View style={styles.chips}>
-      {options.map((o) => (
-        <Pressable key={o} onPress={() => onChange(o)} style={[styles.chip, { backgroundColor: o === value ? c.text : c.backgroundSelected }]}>
-          <Text style={{ color: o === value ? c.background : c.text }}>{labels?.[o] ?? o}</Text>
-        </Pressable>
-      ))}
-    </View>
-  );
-}
-
-function Button({ c, label, onPress, disabled }: { c: C; label: string; onPress: () => void; disabled?: boolean }) {
-  return (
-    <Pressable onPress={onPress} disabled={disabled} style={[styles.button, { backgroundColor: c.text, opacity: disabled ? 0.6 : 1 }]}>
-      <Text style={[styles.buttonLabel, { color: c.background }]}>{label}</Text>
-    </Pressable>
-  );
-}
-
-const styles = StyleSheet.create({
-  content: { padding: Spacing.three, gap: Spacing.three, paddingBottom: BottomTabInset + Spacing.four },
-  h1: { fontSize: 28, fontWeight: '700' },
-  h2: { fontSize: 18, fontWeight: '600' },
-  big: { fontSize: 34, fontWeight: '700' },
-  card: { borderRadius: 16, padding: Spacing.three, gap: Spacing.two },
-  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  input: { borderWidth: 1, borderRadius: 12, padding: Spacing.three, fontSize: 16 },
-  small: { borderWidth: 1, borderRadius: 10, padding: Spacing.two, fontSize: 16, flex: 1 },
-  smallButton: { borderRadius: 10, paddingVertical: Spacing.two + 2, paddingHorizontal: Spacing.three },
-  button: { borderRadius: 12, paddingVertical: Spacing.three, alignItems: 'center' },
-  buttonLabel: { fontSize: 16, fontWeight: '600' },
-  exercise: { gap: Spacing.one, paddingVertical: Spacing.two },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
-  chip: { borderRadius: 999, paddingVertical: Spacing.two, paddingHorizontal: Spacing.three },
-});
