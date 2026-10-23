@@ -71,6 +71,8 @@ Mi app personal para ordenar mi vida desde el celular: **mi plata, mi cuerpo, mi
    └─ No → Qwen 2.5 3B (dentro del celular, gratis)
 ```
 
+**La IA local se descarga desde la pestaña ⚙️ Ajustes** (~2 GB, una sola vez y mejor con Wi-Fi). Antes de bajarla reviso que haya espacio libre, y la descarga va a un archivo temporal para que una descarga cortada nunca quede como modelo listo. En Ajustes también puedo probar la IA (híbrida o solo local), ver cuánto tarda y borrar el modelo.
+
 ## 🚀 Cómo correrla
 
 Necesito Node 22+ y un Android con huella configurada. No funciona en Expo Go porque usa módulos nativos (llama.rn, SQLCipher).
@@ -99,7 +101,8 @@ src/
 │  ├─ index.tsx         pantalla Hoy (panel de vida)
 │  ├─ finanzas.tsx      pantalla Mi plata
 │  ├─ cerebro.tsx       pantalla Segundo cerebro
-│  └─ coach.tsx         pantalla Coach
+│  ├─ coach.tsx         pantalla Coach
+│  └─ ajustes.tsx       descarga de la IA local, pruebas y cuenta
 ├─ components/
 │  └─ auth-gate.tsx     login con Google y pantalla de bloqueo
 └─ lib/
