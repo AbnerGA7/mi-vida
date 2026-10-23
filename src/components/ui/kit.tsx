@@ -187,6 +187,20 @@ export function Input({ icon, style, ...props }: TextInputProps & { icon?: IconN
   );
 }
 
+// Botón redondo de micrófono: se pone rojo mientras escucha.
+export function MicButton({ escuchando, onPress, color }: { escuchando: boolean; onPress: () => void; color?: string }) {
+  const p = usePalette();
+  const c = escuchando ? p.danger : (color ?? p.primary);
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityLabel={escuchando ? 'Dejar de escuchar' : 'Hablar'}
+      style={({ pressed }) => [styles.mic, { backgroundColor: c, transform: [{ scale: pressed ? 0.94 : escuchando ? 1.06 : 1 }] }]}>
+      <MaterialCommunityIcons name={escuchando ? 'stop' : 'microphone'} size={24} color="#FFFFFF" />
+    </Pressable>
+  );
+}
+
 export function Chip({ label, selected, onPress, color }: { label: string; selected: boolean; onPress: () => void; color?: string }) {
   const p = usePalette();
   const c = color ?? p.primary;
@@ -337,6 +351,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
   },
   inputText: { flex: 1, fontSize: 16, paddingVertical: 13 },
+  mic: { width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center' },
   chip: { borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14, borderWidth: 1 },
   badge: { borderRadius: 999, paddingVertical: 3, paddingHorizontal: 10 },
   stat: { flex: 1, borderRadius: 16, padding: Spacing.three, gap: 2, borderWidth: StyleSheet.hairlineWidth },
