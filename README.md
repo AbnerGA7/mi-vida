@@ -66,7 +66,7 @@ Mi app personal para ordenar mi vida desde el celular: **mi plata, mi cuerpo, mi
 
 ```
 ¿Hay internet y el dato no es privado?
-   ├─ Sí → Gemini 2.5 Flash (nube, gratis)
+   ├─ Sí → Gemini Flash (nube, gratis; alias gemini-flash-latest)
    │        └─ si falla → Qwen local
    └─ No → Qwen 2.5 3B (dentro del celular, gratis)
 ```
