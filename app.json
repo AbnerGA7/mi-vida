@@ -53,7 +53,8 @@
           "cameraPermission": "Mi Vida usa la cámara para escanear tus documentos y boletas.",
           "photosPermission": false
         }
-      ]
+      ],
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true,
