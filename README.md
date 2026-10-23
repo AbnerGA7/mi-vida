@@ -15,7 +15,7 @@ Mi app personal para ordenar mi vida desde el celular: **mi plata, mi cuerpo, mi
 | 🤖 **IA híbrida** | Qwen 2.5 3B dentro del celular sin internet, Gemini en la nube cuando hay señal | ✅ Listo |
 | 💰 **Asesor financiero** | Registro rápido ("25 menú con yape"), balance del mes y presupuestos con semáforo | ✅ Listo (v1) |
 | 🧠 **Segundo cerebro** | Escaneo SOAT, DNI, contratos y pólizas; le pregunto "¿cuándo vence mi SOAT?" | ✅ Listo (v1) |
-| 💪 **Coach** | Rutinas de gym y menús que se ajustan a mi progreso real | ⏳ Pendiente |
+| 💪 **Coach** | Calorías y macros, rutina según mis días, registro de series y ajustes por progreso | ✅ Listo (v1) |
 | 🏠 **Panel de vida** | Agenda, correos y tareas; resumen cada mañana por notificación | ⏳ Pendiente |
 
 ## 💰 Asesor financiero
@@ -33,6 +33,18 @@ Mi app personal para ordenar mi vida desde el celular: **mi plata, mi cuerpo, mi
 - **Preguntas con fuente:** busco con FTS5 los documentos más relevantes y la IA responde citando de cuál sacó el dato. Si no está, me dice qué subir.
 - **Alertas** de lo vencido o lo que vence en menos de 30 días.
 - Los archivos se guardan en el almacenamiento privado de la app, no en la galería. Los PDF se guardan pero aún no se leen: para eso los escaneo.
+
+## 💪 Coach de gym y alimentación
+
+- **Mis números:** calorías con Mifflin-St Jeor × factor de actividad, ajustadas a mi objetivo (−18% para bajar grasa, +7% para ganar masa). Proteína de 2-2.2 g/kg, grasa de 0.9 g/kg y el resto en carbohidratos.
+- **Rutina según mis días:** cuerpo completo (2-3 días), torso/pierna (4) o empuje/jalón/pierna (5-6). Si tengo una lesión (rodilla, espalda, hombro), cambio los ejercicios de riesgo por alternativas seguras.
+- **Sesión de hoy:** registro peso y repeticiones por serie y veo lo que hice la última vez.
+- **Registro semanal con reglas en código:**
+  - Peso estancado 2 semanas → ±150 kcal (sale de los carbohidratos).
+  - Energía o sueño bajos → menos volumen.
+  - Un ejercicio sin progreso en 3 sesiones → cambiarlo o bajar a 3×10.
+  - Si escribo "mareo" o "dolor agudo" → no subo cargas y me recomienda ir al médico.
+- **Menú peruano del día** generado con IA según mis macros y lo que no como.
 
 ## 🔐 Seguridad
 
@@ -77,7 +89,8 @@ npx expo run:android
 src/
 ├─ app/
 │  ├─ finanzas.tsx      pantalla Mi plata
-│  └─ cerebro.tsx       pantalla Segundo cerebro
+│  ├─ cerebro.tsx       pantalla Segundo cerebro
+│  └─ coach.tsx         pantalla Coach
 ├─ components/
 │  └─ auth-gate.tsx     login con Google y pantalla de bloqueo
 └─ lib/
@@ -88,7 +101,8 @@ src/
    ├─ db/               SQLite cifrado y migraciones
    ├─ ai/               IA local, nube y modo híbrido
    ├─ finance/          presupuestos, consultas y registro rápido
-   └─ brain/            escaneo, OCR, fechas y preguntas a mis documentos
+   ├─ brain/            escaneo, OCR, fechas y preguntas a mis documentos
+   └─ coach/            macros, rutinas, reglas de ajuste y menú
 ```
 
 ## 🛣️ Hoja de ruta
@@ -100,5 +114,6 @@ src/
 - [ ] Asesor financiero v2 (metas de ahorro, alertas de pago, leer boletas con la cámara)
 - [x] Segundo cerebro v1 (escaneo, OCR, vencimientos y preguntas con fuente)
 - [ ] Segundo cerebro v2 (leer texto de PDF y notificaciones de vencimiento)
-- [ ] Coach de gym y alimentación
+- [x] Coach v1 (macros, rutina, series, registro semanal y menú)
+- [ ] Coach v2 (gráficas de progreso y recordatorio semanal)
 - [ ] Panel de vida y resumen matutino
