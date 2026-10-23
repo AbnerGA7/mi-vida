@@ -64,6 +64,34 @@ const MIGRATIONS = [
     INSERT INTO documents_fts(documents_fts, rowid, nombre, texto) VALUES ('delete', old.id, old.nombre, old.texto);
     INSERT INTO documents_fts(rowid, nombre, texto) VALUES (new.id, new.nombre, new.texto);
   END;`,
+  // v3: coach de gym y alimentación.
+  `CREATE TABLE IF NOT EXISTS coach_profile (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    edad INTEGER NOT NULL,
+    sexo TEXT NOT NULL CHECK (sexo IN ('hombre', 'mujer')),
+    estatura_cm REAL NOT NULL,
+    peso_kg REAL NOT NULL,
+    objetivo TEXT NOT NULL CHECK (objetivo IN ('grasa', 'masa', 'mantener')),
+    dias_por_semana INTEGER NOT NULL,
+    lesiones TEXT,
+    alimentos_excluidos TEXT,
+    calorias INTEGER NOT NULL,
+    proteina_g INTEGER NOT NULL,
+    grasa_g INTEGER NOT NULL,
+    carbohidratos_g INTEGER NOT NULL,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE TABLE IF NOT EXISTS coach_adjustments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    fecha TEXT NOT NULL DEFAULT (date('now')),
+    tipo TEXT NOT NULL,
+    detalle TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS meal_plans (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    contenido TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );`,
 ];
 
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
