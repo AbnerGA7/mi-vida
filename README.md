@@ -1,56 +1,84 @@
-# Welcome to your Expo app 👋
+# Mi Vida 📱
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Mi app personal para ordenar mi vida desde el celular: **mi plata, mi cuerpo, mis papeles y mi día**, con una IA que funciona **con y sin internet**.
 
-## Get started
+![Expo](https://img.shields.io/badge/Expo-SDK%2058-000?style=for-the-badge&logo=expo)
+![React Native](https://img.shields.io/badge/React%20Native-0.88-000?style=for-the-badge&logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-6-000?style=for-the-badge&logo=typescript)
+![IA híbrida](https://img.shields.io/badge/IA-Qwen%20local%20%2B%20Gemini-000?style=for-the-badge)
 
-1. Install dependencies
+## ¿Qué hace?
 
-   ```bash
-   npm install
-   ```
+| Módulo | Qué hace | Estado |
+|---|---|---|
+| 🔐 **Acceso** | Login con Google solo para mi correo + huella/PIN + base de datos cifrada | ✅ Listo |
+| 🤖 **IA híbrida** | Qwen 2.5 3B dentro del celular sin internet, Gemini en la nube cuando hay señal | ✅ Listo |
+| 💰 **Asesor financiero** | Gastos en soles, presupuestos, metas de ahorro y alertas de pago | 🚧 Siguiente |
+| 🧠 **Segundo cerebro** | Contratos, seguros y documentos; le pregunto "¿cuándo vence mi SOAT?" | ⏳ Pendiente |
+| 💪 **Coach** | Rutinas de gym y menús que se ajustan a mi progreso real | ⏳ Pendiente |
+| 🏠 **Panel de vida** | Agenda, correos y tareas; resumen cada mañana por notificación | ⏳ Pendiente |
 
-2. Start the app
+## 🔐 Seguridad
 
-   ```bash
-   npx expo start
-   ```
+- **Solo yo entro:** el login con Google rechaza cualquier correo que no sea el mío.
+- **Huella o PIN** al abrir la app y cada vez que vuelve de segundo plano.
+- **Base de datos cifrada** con SQLCipher; la llave vive solo en el almacén seguro del celular.
+- **Google en solo lectura:** Calendar y Gmail se leen, nunca se envía ni se borra nada.
+- **Modo privado:** finanzas y documentos usan solo la IA local, así que esos datos nunca salen del celular.
 
-In the output, you'll find options to open the app in a
+## 🤖 Cómo funciona la IA híbrida
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+¿Hay internet y el dato no es privado?
+   ├─ Sí → Gemini 2.5 Flash (nube, gratis)
+   │        └─ si falla → Qwen local
+   └─ No → Qwen 2.5 3B (dentro del celular, gratis)
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+Las cuentas importantes (presupuestos, calorías, metas) se calculan **en código**, no con la IA, para que siempre salgan bien.
 
-### Other setup steps
+## 🚀 Cómo correrla
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+Necesito Node 22+ y un Android con huella configurada. No funciona en Expo Go porque usa módulos nativos (llama.rn, SQLCipher).
 
-## Learn more
+```bash
+npm install
+cp .env.example .env
+npx expo run:android
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+### Variables de entorno (`.env`)
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+| Variable | De dónde sale |
+|---|---|
+| `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID` | Google Cloud → Credenciales → ID de cliente OAuth tipo Android (paquete `com.abnerga7.mivida`) |
+| `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | Google Cloud → ID de cliente OAuth tipo Web |
+| `EXPO_PUBLIC_GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) (plan gratis) |
 
-## Join the community
+> En Google Cloud dejo la app OAuth en modo **Testing** con mi correo como usuario de prueba: los permisos de Gmail piden verificación de Google para uso público.
 
-Join our community of developers creating universal apps.
+## 🗂️ Estructura
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```
+src/
+├─ app/                 pantallas (expo-router)
+├─ components/
+│  └─ auth-gate.tsx     login con Google y pantalla de bloqueo
+└─ lib/
+   ├─ config.ts         correo permitido, modelos y llaves
+   ├─ session.tsx       sesión y bloqueo automático
+   ├─ secure-store.ts   sesión y llave de cifrado
+   ├─ auth/             Google y biometría
+   ├─ db/               SQLite cifrado y migraciones
+   └─ ai/               IA local, nube y modo híbrido
+```
+
+## 🛣️ Hoja de ruta
+
+- [x] Proyecto base, login con Google y huella
+- [x] Base de datos local cifrada
+- [x] IA híbrida local + nube
+- [ ] Asesor financiero
+- [ ] Segundo cerebro
+- [ ] Coach de gym y alimentación
+- [ ] Panel de vida y resumen matutino
