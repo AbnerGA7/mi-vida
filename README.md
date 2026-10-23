@@ -16,7 +16,15 @@ Mi app personal para ordenar mi vida desde el celular: **mi plata, mi cuerpo, mi
 | 💰 **Asesor financiero** | Registro rápido ("25 menú con yape"), balance del mes y presupuestos con semáforo | ✅ Listo (v1) |
 | 🧠 **Segundo cerebro** | Escaneo SOAT, DNI, contratos y pólizas; le pregunto "¿cuándo vence mi SOAT?" | ✅ Listo (v1) |
 | 💪 **Coach** | Calorías y macros, rutina según mis días, registro de series y ajustes por progreso | ✅ Listo (v1) |
-| 🏠 **Panel de vida** | Agenda, correos y tareas; resumen cada mañana por notificación | ⏳ Pendiente |
+| 🏠 **Panel de vida** | Agenda, correos importantes, tareas y resumen cada mañana por notificación | ✅ Listo (v1) |
+
+## 🏠 Panel de vida (pestaña Hoy)
+
+- **Agenda de hoy** desde Google Calendar y **correos importantes sin leer** de las últimas 48 h desde Gmail, todo en solo lectura.
+- **Tareas en una línea** con fechas en lenguaje natural, entendidas en código: "pagar luz el viernes!" crea la tarea para el próximo viernes con prioridad alta. También entiende "hoy", "mañana", "pasado mañana" y "15/03".
+- **Resumen matutino:** junta mi agenda, tareas, presupuestos en riesgo, documentos por vencer y el gym de hoy. Llega como **notificación a las 7:00**.
+  - El texto se arma en el celular y se actualiza cada vez que abro la app, así que muestra los datos de la última vez que la abrí.
+  - El token de Google dura ~1 hora: si venció, el panel me pide reconectar con un botón.
 
 ## 💰 Asesor financiero
 
@@ -88,6 +96,7 @@ npx expo run:android
 ```
 src/
 ├─ app/
+│  ├─ index.tsx         pantalla Hoy (panel de vida)
 │  ├─ finanzas.tsx      pantalla Mi plata
 │  ├─ cerebro.tsx       pantalla Segundo cerebro
 │  └─ coach.tsx         pantalla Coach
@@ -97,6 +106,9 @@ src/
    ├─ config.ts         correo permitido, modelos y llaves
    ├─ session.tsx       sesión y bloqueo automático
    ├─ secure-store.ts   sesión y llave de cifrado
+   ├─ tasks.ts          tareas con fechas en lenguaje natural
+   ├─ brief.ts          resumen del día y notificación de las 7 am
+   ├─ google/           Calendar y Gmail en solo lectura
    ├─ auth/             Google y biometría
    ├─ db/               SQLite cifrado y migraciones
    ├─ ai/               IA local, nube y modo híbrido
@@ -116,4 +128,6 @@ src/
 - [ ] Segundo cerebro v2 (leer texto de PDF y notificaciones de vencimiento)
 - [x] Coach v1 (macros, rutina, series, registro semanal y menú)
 - [ ] Coach v2 (gráficas de progreso y recordatorio semanal)
-- [ ] Panel de vida y resumen matutino
+- [x] Panel de vida v1 (agenda, correos, tareas y resumen a las 7 am)
+- [ ] Resumen que se recalcula en segundo plano antes de las 7 am
+- [ ] Asistente central: un chat que consulta los 4 módulos
