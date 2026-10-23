@@ -21,6 +21,8 @@ export function useGoogleAuthRequest() {
     androidClientId: GOOGLE_ANDROID_CLIENT_ID,
     webClientId: GOOGLE_WEB_CLIENT_ID,
     scopes: GOOGLE_SCOPES,
+    // Siempre muestro el selector: el celular puede tener otra cuenta de Google abierta.
+    selectAccount: true,
   });
 }
 
