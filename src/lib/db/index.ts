@@ -49,6 +49,21 @@ const MIGRATIONS = [
     sueno INTEGER,
     notas TEXT
   );`,
+  // v2: segundo cerebro con búsqueda de texto completo.
+  `ALTER TABLE documents ADD COLUMN resumen TEXT;
+  CREATE VIRTUAL TABLE IF NOT EXISTS documents_fts USING fts5(
+    nombre, texto, content='documents', content_rowid='id', tokenize='unicode61 remove_diacritics 2'
+  );
+  CREATE TRIGGER IF NOT EXISTS documents_ai AFTER INSERT ON documents BEGIN
+    INSERT INTO documents_fts(rowid, nombre, texto) VALUES (new.id, new.nombre, new.texto);
+  END;
+  CREATE TRIGGER IF NOT EXISTS documents_ad AFTER DELETE ON documents BEGIN
+    INSERT INTO documents_fts(documents_fts, rowid, nombre, texto) VALUES ('delete', old.id, old.nombre, old.texto);
+  END;
+  CREATE TRIGGER IF NOT EXISTS documents_au AFTER UPDATE ON documents BEGIN
+    INSERT INTO documents_fts(documents_fts, rowid, nombre, texto) VALUES ('delete', old.id, old.nombre, old.texto);
+    INSERT INTO documents_fts(rowid, nombre, texto) VALUES (new.id, new.nombre, new.texto);
+  END;`,
 ];
 
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
