@@ -57,7 +57,8 @@
           "photosPermission": false
         }
       ],
-      "expo-notifications"
+      "expo-notifications",
+      "expo-speech-recognition"
     ],
     "experiments": {
       "typedRoutes": true,
