@@ -1,8 +1,9 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, ScrollView, Text } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
 
-import { Badge, Body, Button, Card, Chip, Empty, Input, ListItem, Muted, Progress, Row, Screen, Stat, useModule, usePalette, type IconName } from '@/components/ui/kit';
+import { Badge, Body, Button, Card, Chip, Empty, Input, ListItem, MicButton, Muted, Progress, Row, Screen, Stat, useModule, usePalette, type IconName } from '@/components/ui/kit';
+import { speak, useDictation } from '@/lib/voice';
 import { Spacing } from '@/constants/theme';
 import { formatSoles, summarizeBudgets, type CategoryBudget } from '@/lib/finance/budget';
 import { quickCapture } from '@/lib/finance/quick-capture';
@@ -58,13 +59,23 @@ export default function PlataScreen() {
     }, [cargar]),
   );
 
-  async function registrar() {
-    if (!texto.trim()) return;
+  // Si lo dicté, confirmo en voz alta lo que registré.
+  const { escuchando, parcial, empezar, parar } = useDictation((dicho) => {
+    setTexto(dicho);
+    registrar(dicho, true);
+  });
+
+  async function registrar(entrada = texto, conVoz = false) {
+    if (!entrada.trim()) return;
     setGuardando(true);
     try {
-      await addTransaction(await quickCapture(texto));
+      const mov = await quickCapture(entrada);
+      await addTransaction(mov);
       setTexto('');
       await cargar();
+      if (conVoz) {
+        speak(`Listo, registré ${mov.tipo === 'ingreso' ? 'un ingreso de' : ''} ${mov.monto} soles en ${mov.categoria}.`);
+      }
     } catch (e) {
       Alert.alert('No pude registrarlo', e instanceof Error ? e.message : 'Intenta con "25 menú con yape"');
     } finally {
@@ -103,15 +114,20 @@ export default function PlataScreen() {
       </Card>
 
       <Card title="Registrar" icon="lightning-bolt" accent={m.solid}>
-        <Input
-          icon="message-text-outline"
-          value={texto}
-          onChangeText={setTexto}
-          onSubmitEditing={registrar}
-          placeholder='"25 menú con yape" o "me pagaron 1200"'
-          returnKeyType="done"
-        />
-        <Button label="Guardar" icon="check" color={m.solid} loading={guardando} onPress={registrar} />
+        <Row>
+          <View style={{ flex: 1 }}>
+            <Input
+              icon="message-text-outline"
+              value={escuchando ? parcial : texto}
+              onChangeText={setTexto}
+              onSubmitEditing={() => registrar()}
+              placeholder={escuchando ? 'Te escucho…' : '"25 menú con yape" o "me pagaron 1200"'}
+              returnKeyType="done"
+            />
+          </View>
+          <MicButton escuchando={escuchando} color={m.solid} onPress={escuchando ? parar : empezar} />
+        </Row>
+        <Button label="Guardar" icon="check" color={m.solid} loading={guardando} onPress={() => registrar()} />
         <Muted size={12}>Lo entiendo al toque; si es raro, lo interpreta la IA local sin salir del celular.</Muted>
       </Card>
 
