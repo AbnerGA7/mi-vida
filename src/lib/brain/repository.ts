@@ -19,6 +19,19 @@ export async function saveDocument(doc: ExtractedDocument) {
   );
 }
 
+// Guardo lo que salió de volver a leer un documento (el trigger actualiza la búsqueda FTS).
+export async function updateDocumentContent(id: number, doc: ExtractedDocument) {
+  const db = await getDb();
+  await db.runAsync(
+    'UPDATE documents SET categoria = ?, texto = ?, resumen = ?, fecha_vencimiento = ? WHERE id = ?',
+    doc.categoria,
+    doc.texto,
+    doc.resumen,
+    doc.fecha_vencimiento,
+    id,
+  );
+}
+
 export async function updateExpiration(id: number, fecha: string | null) {
   const db = await getDb();
   await db.runAsync('UPDATE documents SET fecha_vencimiento = ? WHERE id = ?', fecha, id);
@@ -73,6 +86,13 @@ export async function askDocuments(pregunta: string): Promise<Answer> {
   const fuentes = await searchDocuments(pregunta);
   if (fuentes.length === 0) {
     return { texto: 'No lo encuentro en tus documentos. Sube o escanea el documento relacionado.', fuentes, source: null };
+  }
+  if (fuentes.every((d) => !d.texto?.trim())) {
+    return {
+      texto: 'Encontré el documento, pero todavía no tengo su texto. Tócalo y elige "Volver a leer".',
+      fuentes,
+      source: null,
+    };
   }
   const contexto = fuentes
     .map(
