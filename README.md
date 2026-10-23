@@ -14,7 +14,7 @@ Mi app personal para ordenar mi vida desde el celular: **mi plata, mi cuerpo, mi
 | 🔐 **Acceso** | Login con Google solo para mi correo + huella/PIN + base de datos cifrada | ✅ Listo |
 | 🤖 **IA híbrida** | Qwen 2.5 3B dentro del celular sin internet, Gemini en la nube cuando hay señal | ✅ Listo |
 | 💰 **Asesor financiero** | Registro rápido ("25 menú con yape"), balance del mes y presupuestos con semáforo | ✅ Listo (v1) |
-| 🧠 **Segundo cerebro** | Contratos, seguros y documentos; le pregunto "¿cuándo vence mi SOAT?" | ⏳ Pendiente |
+| 🧠 **Segundo cerebro** | Escaneo SOAT, DNI, contratos y pólizas; le pregunto "¿cuándo vence mi SOAT?" | ✅ Listo (v1) |
 | 💪 **Coach** | Rutinas de gym y menús que se ajustan a mi progreso real | ⏳ Pendiente |
 | 🏠 **Panel de vida** | Agenda, correos y tareas; resumen cada mañana por notificación | ⏳ Pendiente |
 
@@ -24,6 +24,15 @@ Mi app personal para ordenar mi vida desde el celular: **mi plata, mi cuerpo, mi
 - **Presupuestos con semáforo:** 🟢 vas bien, 🟡 en riesgo (gastas más rápido que el avance del mes), 🔴 excedido. También muestra la proyección al cierre del mes.
 - **Movimientos del mes:** mantengo presionado uno para borrarlo.
 - Todas las cuentas se hacen **en código**, no con la IA.
+
+## 🧠 Segundo cerebro
+
+- **Escaneo con la cámara** o subo una imagen, texto o PDF. El texto se lee con **OCR de ML Kit dentro del celular**.
+- La **IA local** lo clasifica (Seguros, Contratos, Identidad, Salud, Vehículos…) y escribe un resumen de una línea.
+- La **fecha de vencimiento** se detecta en código (formatos `15/03/2027`, `2027-03-15` y "31 de diciembre de 2026"), priorizando la que aparece cerca de "vence", "vigencia" o "hasta".
+- **Preguntas con fuente:** busco con FTS5 los documentos más relevantes y la IA responde citando de cuál sacó el dato. Si no está, me dice qué subir.
+- **Alertas** de lo vencido o lo que vence en menos de 30 días.
+- Los archivos se guardan en el almacenamiento privado de la app, no en la galería. Los PDF se guardan pero aún no se leen: para eso los escaneo.
 
 ## 🔐 Seguridad
 
@@ -67,7 +76,8 @@ npx expo run:android
 ```
 src/
 ├─ app/
-│  └─ finanzas.tsx      pantalla Mi plata
+│  ├─ finanzas.tsx      pantalla Mi plata
+│  └─ cerebro.tsx       pantalla Segundo cerebro
 ├─ components/
 │  └─ auth-gate.tsx     login con Google y pantalla de bloqueo
 └─ lib/
@@ -77,7 +87,8 @@ src/
    ├─ auth/             Google y biometría
    ├─ db/               SQLite cifrado y migraciones
    ├─ ai/               IA local, nube y modo híbrido
-   └─ finance/          presupuestos, consultas y registro rápido
+   ├─ finance/          presupuestos, consultas y registro rápido
+   └─ brain/            escaneo, OCR, fechas y preguntas a mis documentos
 ```
 
 ## 🛣️ Hoja de ruta
@@ -87,6 +98,7 @@ src/
 - [x] IA híbrida local + nube
 - [x] Asesor financiero v1 (registro rápido, presupuestos y balance)
 - [ ] Asesor financiero v2 (metas de ahorro, alertas de pago, leer boletas con la cámara)
-- [ ] Segundo cerebro
+- [x] Segundo cerebro v1 (escaneo, OCR, vencimientos y preguntas con fuente)
+- [ ] Segundo cerebro v2 (leer texto de PDF y notificaciones de vencimiento)
 - [ ] Coach de gym y alimentación
 - [ ] Panel de vida y resumen matutino
