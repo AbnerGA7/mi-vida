@@ -22,6 +22,22 @@ export async function loadUser(): Promise<GoogleUser | null> {
 
 export async function clearUser() {
   await SecureStore.deleteItemAsync(USER_KEY, options);
+  await SecureStore.deleteItemAsync(GOOGLE_TOKEN_KEY, options);
+}
+
+// Token de Google (dura ~1 hora): lo guardo para no pedir reconectar cada vez que abro la app.
+const GOOGLE_TOKEN_KEY = 'google_token';
+
+export async function saveGoogleToken(token: string, expiresInSeconds = 3600) {
+  const expiresAt = Date.now() + (expiresInSeconds - 60) * 1000;
+  await SecureStore.setItemAsync(GOOGLE_TOKEN_KEY, JSON.stringify({ token, expiresAt }), options);
+}
+
+export async function loadGoogleToken(): Promise<string | null> {
+  const raw = await SecureStore.getItemAsync(GOOGLE_TOKEN_KEY, options);
+  if (!raw) return null;
+  const { token, expiresAt } = JSON.parse(raw) as { token: string; expiresAt: number };
+  return Date.now() < expiresAt ? token : null;
 }
 
 // Llave de cifrado de la base de datos: se genera una vez y vive solo en el almacén seguro.
