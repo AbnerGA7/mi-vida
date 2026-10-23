@@ -45,3 +45,6 @@ example
 # secretos
 .env
 *.gguf
+
+# logs de compilación
+build.log
