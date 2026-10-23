@@ -4,8 +4,38 @@ import { ActivityIndicator, Alert } from 'react-native';
 
 import { Badge, Body, Button, Card, Empty, Input, ListItem, Muted, Row, Screen, useModule, usePalette, type IconName } from '@/components/ui/kit';
 import { daysUntil } from '@/lib/brain/dates';
-import { pickFile, processFile, scanWithCamera, type PickedFile } from '@/lib/brain/extract';
-import { askDocuments, deleteDocument, listDocuments, saveDocument, type Answer, type Documento } from '@/lib/brain/repository';
+import {
+  extractFromStored,
+  mimeFromPath,
+  pickFile,
+  processFile,
+  scanWithCamera,
+  type AskCloud,
+  type PickedFile,
+} from '@/lib/brain/extract';
+import {
+  askDocuments,
+  deleteDocument,
+  listDocuments,
+  saveDocument,
+  updateDocumentContent,
+  type Answer,
+  type Documento,
+} from '@/lib/brain/repository';
+import { openDocument } from '@/lib/brain/viewer';
+
+// Antes de mandar un PDF a la nube siempre pregunto: por defecto todo se lee en el celular.
+const askCloud: AskCloud = (nombre) =>
+  new Promise((resolve) =>
+    Alert.alert(
+      'No pude leerlo bien en el celular',
+      `"${nombre}" tiene letra muy chica o el escaneo está borroso. ¿Lo leo con la IA en la nube (Gemini)? El archivo se enviará a Google.`,
+      [
+        { text: 'No, dejarlo así', style: 'cancel', onPress: () => resolve(false) },
+        { text: 'Sí, leer en la nube', onPress: () => resolve(true) },
+      ],
+    ),
+  );
 
 const ICONO_DOC: Record<string, IconName> = {
   Seguros: 'shield-check-outline',
@@ -49,8 +79,17 @@ export default function CerebroScreen() {
     try {
       const file = await obtener();
       if (!file) return;
+      if (docs.some((d) => d.nombre === file.nombre)) {
+        const seguir = await new Promise<boolean>((resolve) =>
+          Alert.alert('Ya tienes este documento', `"${file.nombre}" ya está guardado. ¿Agregarlo otra vez?`, [
+            { text: 'Cancelar', style: 'cancel', onPress: () => resolve(false) },
+            { text: 'Agregar', onPress: () => resolve(true) },
+          ]),
+        );
+        if (!seguir) return;
+      }
       setProcesando(true);
-      await saveDocument(await processFile(file));
+      await saveDocument(await processFile(file, askCloud));
       await cargar();
     } catch (e) {
       Alert.alert('No pude guardar el documento', e instanceof Error ? e.message : String(e));
@@ -69,6 +108,33 @@ export default function CerebroScreen() {
     } finally {
       setPensando(false);
     }
+  }
+
+  async function releer(doc: Documento) {
+    setProcesando(true);
+    try {
+      const nuevo = await extractFromStored(doc.nombre, doc.ruta, mimeFromPath(doc.ruta), askCloud);
+      await updateDocumentContent(doc.id, nuevo);
+      await cargar();
+      Alert.alert(
+        nuevo.texto.trim() ? 'Documento leído' : 'Sigo sin poder leerlo',
+        nuevo.texto.trim()
+          ? `${nuevo.categoria}${nuevo.fecha_vencimiento ? ` · vence ${nuevo.fecha_vencimiento}` : ''}`
+          : 'Prueba escaneándolo con la cámara con buena luz.',
+      );
+    } catch (e) {
+      Alert.alert('No pude leerlo', e instanceof Error ? e.message : String(e));
+    } finally {
+      setProcesando(false);
+    }
+  }
+
+  function opciones(doc: Documento) {
+    Alert.alert(doc.nombre, doc.resumen ?? doc.categoria, [
+      { text: 'Ver documento', onPress: () => openDocument(doc.ruta).catch((e) => Alert.alert('No pude abrirlo', String(e))) },
+      { text: 'Volver a leer', onPress: () => releer(doc) },
+      { text: 'Borrar', style: 'destructive', onPress: () => borrar(doc) },
+    ]);
   }
 
   function borrar(doc: Documento) {
@@ -139,13 +205,20 @@ export default function CerebroScreen() {
                 iconColor={m.solid}
                 title={d.nombre}
                 subtitle={`${d.categoria}${d.resumen && d.resumen !== d.nombre ? ` · ${d.resumen}` : ''}`}
-                right={v ? <Badge label={v.texto.replace('Vence el ', '')} color={v.color} /> : undefined}
+                right={
+                  v ? (
+                    <Badge label={v.texto.replace('Vence el ', '')} color={v.color} />
+                  ) : !d.texto?.trim() ? (
+                    <Badge label="Sin leer" color={p.warning} />
+                  ) : undefined
+                }
+                onPress={() => opciones(d)}
                 onLongPress={() => borrar(d)}
               />
             );
           })
         )}
-        {docs.length > 0 ? <Muted size={12}>Mantén presionado un documento para borrarlo</Muted> : null}
+        {docs.length > 0 ? <Muted size={12}>Toca un documento para verlo o volver a leerlo · mantén presionado para borrar</Muted> : null}
       </Card>
     </Screen>
   );
