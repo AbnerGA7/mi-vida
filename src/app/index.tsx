@@ -58,7 +58,8 @@ export default function HoyScreen() {
         [ev, co] = await Promise.all([todayEvents(accessToken), importantEmails(accessToken)]);
         setGoogleError(null);
       } catch (e) {
-        setGoogleError(e instanceof Error && e.message === 'TOKEN_EXPIRADO' ? 'Tu conexión con Google venció.' : 'No pude leer Google.');
+        const msg = e instanceof Error ? e.message : String(e);
+        setGoogleError(msg === 'TOKEN_EXPIRADO' ? 'Tu conexión con Google venció.' : `No pude leer Google · ${msg}`);
       }
     }
     const [t, b] = await Promise.all([upcomingTasks(), buildBrief(ev, co)]);
