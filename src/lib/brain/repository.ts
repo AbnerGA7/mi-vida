@@ -1,7 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
 
 import { askAi, type AiSource } from '@/lib/ai';
-import { toFtsQuery } from '@/lib/brain/answer';
+import { pasajes, toFtsQuery } from '@/lib/brain/answer';
 import type { ExtractedDocument } from '@/lib/brain/extract';
 import { getDb } from '@/lib/db';
 
@@ -90,7 +90,7 @@ export async function askDocuments(pregunta: string): Promise<Answer> {
   const contexto = fuentes
     .map(
       (d, i) =>
-        `[${i + 1}] ${d.nombre} (${d.categoria}${d.fecha_vencimiento ? `, vence ${d.fecha_vencimiento}` : ''})\n${(d.texto ?? '').slice(0, 1500)}`,
+        `[${i + 1}] ${d.nombre} (${d.categoria}${d.fecha_vencimiento ? `, vence ${d.fecha_vencimiento}` : ''})\n${pasajes(d.texto ?? '', pregunta)}`,
     )
     .join('\n\n');
 

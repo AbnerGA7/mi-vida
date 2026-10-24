@@ -154,3 +154,28 @@ export function toFtsQuery(pregunta: string) {
     .map((p) => `"${p}"*`)
     .join(' OR ');
 }
+
+// En vez de mandarle a la IA el inicio del documento, le mando los trozos donde aparecen
+// las palabras de la pregunta: menos texto → responde más rápido y con el dato correcto.
+export function pasajes(texto: string, pregunta: string, max = 900) {
+  if (texto.length <= max) return texto;
+  const claves = palabrasClave(pregunta);
+  const lineas = texto.split(/\n+/);
+  const norm = lineas.map(normalize);
+  const puntaje = norm.map((l) => claves.filter((c) => l.includes(c)).length);
+  const elegidas = new Set<number>();
+  const orden = puntaje.map((s, i) => [s, i]).filter(([s]) => s > 0).sort((a, b) => b[0] - a[0]);
+  let largo = 0;
+  for (const [, i] of orden) {
+    for (const j of [i - 1, i, i + 1]) {
+      if (j < 0 || j >= lineas.length || elegidas.has(j)) continue;
+      if (largo + lineas[j].length > max) break;
+      elegidas.add(j);
+      largo += lineas[j].length + 1;
+    }
+    if (largo >= max) break;
+  }
+  if (elegidas.size === 0) return texto.slice(0, max);
+  const idx = [...elegidas].sort((a, b) => a - b);
+  return idx.map((i, k) => (k > 0 && i - idx[k - 1] > 1 ? `… ${lineas[i]}` : lineas[i])).join('\n');
+}
