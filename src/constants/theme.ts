@@ -96,5 +96,7 @@ export const Spacing = {
   six: 64,
 } as const;
 
+export const Radius = { sm: 10, md: 14, lg: 20, xl: 28, pill: 999 } as const;
+
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 export const MaxContentWidth = 800;
