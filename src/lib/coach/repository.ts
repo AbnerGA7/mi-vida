@@ -158,3 +158,13 @@ export async function lastMenu() {
   const row = await db.getFirstAsync<{ contenido: string }>('SELECT contenido FROM meal_plans ORDER BY id DESC LIMIT 1');
   return row?.contenido ?? null;
 }
+
+// Datos para las gráficas de progreso: registros semanales y series de las últimas 8 semanas.
+export async function progressData() {
+  const db = await getDb();
+  const [checkins, logs] = await Promise.all([
+    db.getAllAsync<Checkin>('SELECT semana, peso_promedio, energia, sueno FROM checkins ORDER BY semana DESC LIMIT 8'),
+    db.getAllAsync<Log>("SELECT fecha, ejercicio, peso_kg, repeticiones FROM workout_logs WHERE fecha >= date('now', '-56 days')"),
+  ]);
+  return { checkins, logs };
+}
