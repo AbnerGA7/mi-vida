@@ -7,6 +7,8 @@ import { RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { alpha, Badge, Body, Button, Card, Divider, Empty, Input, ListItem, Muted, Row, Screen, Stat, useModule, usePalette } from '@/components/ui/kit';
 import { Font, Spacing, Type } from '@/constants/theme';
 import { useGoogleAuthRequest } from '@/lib/auth/google';
+import { scheduleExpiryReminders } from '@/lib/brain/expiry-notifications';
+import { listDocuments } from '@/lib/brain/repository';
 import { BRIEF_HOUR, buildBrief, scheduleMorningBrief, sendBriefNow, type Brief } from '@/lib/brief';
 import { horaCorta, importantEmails, todayEvents, type Correo, type Evento } from '@/lib/google/api';
 import { useSession } from '@/lib/session';
@@ -87,6 +89,8 @@ export default function HoyScreen() {
         setTareas(t);
         setBrief(b);
         await scheduleMorningBrief(b);
+        // La app abre en Hoy: aquí también dejo al día los avisos de vencimiento.
+        listDocuments().then(scheduleExpiryReminders).catch(() => {});
       } finally {
         setCargando(false);
       }
