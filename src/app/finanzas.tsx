@@ -2,9 +2,9 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, ScrollView, Text, View } from 'react-native';
 
-import { Badge, Body, Button, Card, Chip, Empty, Input, ListItem, MicButton, Muted, Progress, Row, Screen, Stat, useModule, usePalette, type IconName } from '@/components/ui/kit';
+import { Badge, Body, Button, Card, Chip, Divider, Display, Empty, Input, ListItem, MicButton, Muted, Overline, Progress, Row, Screen, Stat, useModule, usePalette, type IconName } from '@/components/ui/kit';
 import { speak, useDictation } from '@/lib/voice';
-import { Spacing } from '@/constants/theme';
+import { Font, Spacing, Type } from '@/constants/theme';
 import { formatSoles, summarizeBudgets, type CategoryBudget } from '@/lib/finance/budget';
 import { quickCapture } from '@/lib/finance/quick-capture';
 import {
@@ -102,18 +102,34 @@ export default function PlataScreen() {
   const ESTADO_COLOR = { ok: p.success, en_riesgo: p.warning, excedido: p.danger };
   const mes = new Date().toLocaleDateString('es-PE', { month: 'long', year: 'numeric' });
 
-  return (
-    <Screen module="plata" icon="wallet-outline" title="Mi plata" subtitle={`Resumen de ${mes}`}>
-      <Card>
-        <Muted>Balance del mes</Muted>
-        <Text style={{ color: balance < 0 ? p.danger : p.text, fontSize: 36, fontWeight: '800' }}>{formatSoles(balance)}</Text>
-        <Row gap={10}>
-          <Stat label="Ingresos" value={formatSoles(totals.ingresos)} icon="arrow-down-circle-outline" color={p.success} />
-          <Stat label="Gastos" value={formatSoles(totals.gastos)} icon="arrow-up-circle-outline" color={p.danger} />
-        </Row>
-      </Card>
+  const ahorro = totals.ingresos > 0 ? Math.max(0, balance) / totals.ingresos : 0;
 
-      <Card title="Registrar" icon="lightning-bolt" accent={m.solid}>
+  return (
+    <Screen
+      module="plata"
+      icon="wallet-outline"
+      eyebrow={mes}
+      title="Mi plata"
+      hero={
+        <View style={{ gap: Spacing.three }}>
+          <View style={{ gap: 2 }}>
+            <Overline color="rgba(255,255,255,0.8)">Balance del mes</Overline>
+            <Display color="#FFFFFF" size={44}>
+              {formatSoles(balance)}
+            </Display>
+            {totals.ingresos > 0 ? (
+              <Text style={[Type.caption, { color: 'rgba(255,255,255,0.85)' }]}>
+                {balance >= 0 ? `Ahorras el ${Math.round(ahorro * 100)}% de lo que entra` : 'Este mes gastas más de lo que entra'}
+              </Text>
+            ) : null}
+          </View>
+          <Row gap={10}>
+            <Stat tone="hero" label="Ingresos" value={formatSoles(totals.ingresos)} icon="arrow-down-circle-outline" />
+            <Stat tone="hero" label="Gastos" value={formatSoles(totals.gastos)} icon="arrow-up-circle-outline" />
+          </Row>
+        </View>
+      }>
+      <Card title="Registrar" subtitle="Escríbelo o dilo en voz alta" icon="lightning-bolt" accent={m.solid}>
         <Row>
           <View style={{ flex: 1 }}>
             <Input
