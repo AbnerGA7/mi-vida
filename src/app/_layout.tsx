@@ -13,6 +13,7 @@ import { useColorScheme } from 'react-native';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import AppTabs from '@/components/app-tabs';
 import { AuthGate } from '@/components/auth-gate';
+import { Colors } from '@/constants/theme';
 import { SessionProvider } from '@/lib/session';
 
 SplashScreen.preventAutoHideAsync();
@@ -29,8 +30,10 @@ export default function TabLayout() {
   });
   if (!fontsLoaded && !fontError) return null;
 
+  const base = colorScheme === 'dark' ? DarkTheme : DefaultTheme;
+  const c = Colors[colorScheme === 'dark' ? 'dark' : 'light'];
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={{ ...base, colors: { ...base.colors, background: c.background, card: c.backgroundElement, primary: c.primary } }}>
       <AnimatedSplashOverlay />
       <SessionProvider>
         <AuthGate>
