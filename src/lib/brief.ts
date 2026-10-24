@@ -7,7 +7,8 @@ import { listDocuments } from '@/lib/brain/repository';
 import { getProfile } from '@/lib/coach/repository';
 import { adaptToInjuries, buildRoutine, todaySession } from '@/lib/coach/routine';
 import { formatSoles, summarizeBudgets } from '@/lib/finance/budget';
-import { listBudgets, spentByCategory } from '@/lib/finance/repository';
+import { upcomingPayments } from '@/lib/finance/payments';
+import { listBudgets, listPayments, spentByCategory } from '@/lib/finance/repository';
 import { horaCorta, type Correo, type Evento } from '@/lib/google/api';
 import { taskBucket, upcomingTasks, type Tarea } from '@/lib/tasks';
 
@@ -20,12 +21,13 @@ export type Brief = { titular: string; lineas: string[] };
 // El resumen se arma en código con mis datos: nada sale del celular para escribirlo.
 // Si ya tengo las tareas cargadas las paso para no volver a consultarlas.
 export async function buildBrief(eventos: Evento[] = [], correos: Correo[] = [], pendientes?: Tarea[]): Promise<Brief> {
-  const [tareas, budgets, spent, docs, profile] = await Promise.all([
+  const [tareas, budgets, spent, docs, profile, pagos] = await Promise.all([
     pendientes ?? upcomingTasks(),
     listBudgets(),
     spentByCategory(),
     listDocuments(),
     getProfile(),
+    listPayments(),
   ]);
 
   const lineas: string[] = [];
@@ -47,6 +49,11 @@ export async function buildBrief(eventos: Evento[] = [], correos: Correo[] = [],
     lineas.push(
       `💰 ${enRiesgo.map((b) => `${b.categoria}: ${formatSoles(b.gastado)} de ${formatSoles(b.presupuesto)}`).join(' · ')}`,
     );
+  }
+
+  const proximos = upcomingPayments(pagos, new Date(), 3);
+  if (proximos.length) {
+    lineas.push(`💳 ${proximos.map((x) => `${x.nombre} ${formatSoles(x.monto)} (${x.dias === 0 ? 'hoy' : x.dias === 1 ? 'mañana' : `en ${x.dias} días`})`).join(' · ')}`);
   }
 
   const porVencer = docs.filter((d) => d.fecha_vencimiento && daysUntil(d.fecha_vencimiento) <= 7);
