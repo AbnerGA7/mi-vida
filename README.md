@@ -58,6 +58,8 @@ Mi app personal para ordenar mi vida desde el celular: **mi plata, mi cuerpo, mi
   - Energía o sueño bajos → menos volumen.
   - Un ejercicio sin progreso en 3 sesiones → cambiarlo o bajar a 3×10.
   - Si escribo "mareo" o "dolor agudo" → no subo cargas y me recomienda ir al médico.
+- **Mi progreso:** gráficas de las últimas 8 semanas con mi peso promedio y el volumen que levanto (kg × repeticiones).
+- **Recordatorio semanal** cada domingo a las 6 pm para hacer el registro.
 - **Menú peruano del día** generado con IA según mis macros y lo que no como.
 
 ## 🔐 Seguridad
