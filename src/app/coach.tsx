@@ -1,9 +1,9 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
 
-import { Badge, Body, Button, Card, Chip, Input, ListItem, Muted, Progress, Row, Screen, Stat, useModule, usePalette } from '@/components/ui/kit';
-import { Spacing } from '@/constants/theme';
+import { Badge, Body, Button, Card, Chip, Display, Input, ListItem, Muted, Overline, Progress, Row, Screen, Segmented, Skeleton, Stat, useModule, usePalette } from '@/components/ui/kit';
+import { Spacing, Type } from '@/constants/theme';
 import type { Log } from '@/lib/coach/adjust';
 import type { Objetivo, Sexo } from '@/lib/coach/nutrition';
 import {
@@ -47,8 +47,39 @@ export default function CoachScreen() {
     : 'Tu plan de gym y alimentación';
 
   return (
-    <Screen module="coach" icon="dumbbell" title="Coach" subtitle={subtitle}>
-      {profile === undefined && <ActivityIndicator />}
+    <Screen
+      module="coach"
+      icon="dumbbell"
+      eyebrow="Coach"
+      title={profile ? 'Tu plan de hoy' : 'Armemos tu plan'}
+      subtitle={subtitle}
+      hero={
+        profile ? (
+          <View style={{ gap: Spacing.three }}>
+            <View>
+              <Overline color="rgba(255,255,255,0.8)">Meta diaria</Overline>
+              <Row gap={6} style={{ alignItems: 'flex-end' }}>
+                <Display color="#FFFFFF" size={44}>
+                  {profile.calorias.toLocaleString('es-PE')}
+                </Display>
+                <Text style={[Type.title, { color: 'rgba(255,255,255,0.85)', marginBottom: 8 }]}>kcal</Text>
+              </Row>
+            </View>
+            <Row gap={10}>
+              <Stat tone="hero" label="Proteína" value={`${profile.proteina_g} g`} icon="food-steak" />
+              <Stat tone="hero" label="Grasa" value={`${profile.grasa_g} g`} icon="water-outline" />
+              <Stat tone="hero" label="Carbos" value={`${profile.carbohidratos_g} g`} icon="barley" />
+            </Row>
+          </View>
+        ) : undefined
+      }>
+      {profile === undefined && (
+        <Card>
+          <Skeleton height={20} width="50%" />
+          <Skeleton height={52} />
+          <Skeleton height={52} />
+        </Card>
+      )}
       {profile === null && <Onboarding onSaved={cargar} />}
       {profile && <Plan profile={profile} onChanged={cargar} />}
     </Screen>
@@ -145,20 +176,9 @@ function Plan({ profile, onChanged }: { profile: Profile; onChanged: () => void 
 
   return (
     <>
-      <Card title="Mis números" icon="fire" accent={m.solid}>
-        <Text style={{ color: p.text, fontSize: 36, fontWeight: '800' }}>
-          {profile.calorias} <Text style={{ fontSize: 18, color: p.textSecondary }}>kcal/día</Text>
-        </Text>
-        <Row gap={10}>
-          <Stat label="Proteína" value={`${profile.proteina_g} g`} color={m.solid} />
-          <Stat label="Grasa" value={`${profile.grasa_g} g`} color={p.warning} />
-          <Stat label="Carbos" value={`${profile.carbohidratos_g} g`} color={p.primary} />
-        </Row>
-        <Muted size={12}>Mifflin-St Jeor × actividad ({profile.dias_por_semana} días), ajustado a tu objetivo.</Muted>
-      </Card>
-
       <Card
         title={`Hoy: ${sesion.nombre}`}
+        subtitle={`${sesion.ejercicios.length} ejercicios · ${totalSeries} series`}
         icon="weight-lifter"
         accent={m.solid}
         right={<Badge label={`${hechas.length}/${totalSeries}`} color={hechas.length >= totalSeries ? p.success : m.solid} />}>
@@ -169,6 +189,7 @@ function Plan({ profile, onChanged }: { profile: Profile; onChanged: () => void 
         {sesion.ejercicios.map((ej) => (
           <ExerciseRow key={ej.nombre} ej={ej} hechas={hechas.filter((h) => h.ejercicio === ej.nombre).length} onLogged={cargar} />
         ))}
+        <Muted size={12}>Mifflin-St Jeor × actividad ({profile.dias_por_semana} días), ajustado a tu objetivo.</Muted>
         <Muted size={12}>Progresión: si completas todas las series en el tope de reps, sube 2.5 kg la próxima vez.</Muted>
       </Card>
 
