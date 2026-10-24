@@ -2,7 +2,8 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, View } from 'react-native';
 
-import { Badge, Body, Button, Card, Empty, Input, ListItem, MicButton, Muted, Row, Screen, useModule, usePalette, type IconName } from '@/components/ui/kit';
+import { Badge, Body, Button, Card, Divider, Empty, Icon, Input, ListItem, MicButton, Muted, Overline, Row, Screen, Stat, useModule, usePalette, type IconName } from '@/components/ui/kit';
+import { Spacing } from '@/constants/theme';
 import { prewarmLocal } from '@/lib/ai';
 import { speak, stopSpeaking, useDictation } from '@/lib/voice';
 import { daysUntil, formatFecha } from '@/lib/brain/dates';
@@ -159,10 +160,23 @@ export default function CerebroScreen() {
   }
 
   const alertas = docs.filter((d) => d.fecha_vencimiento && daysUntil(d.fecha_vencimiento) <= 30);
+  const categorias = new Set(docs.map((d) => d.categoria)).size;
 
   return (
-    <Screen module="cerebro" icon="brain" title="Segundo cerebro" subtitle={`${docs.length} documento(s) guardados`}>
-      <Card title="Pregúntame" icon="chat-question-outline" accent={m.solid}>
+    <Screen
+      module="cerebro"
+      icon="brain"
+      eyebrow="Segundo cerebro"
+      title="Tus papeles, a la mano"
+      subtitle="Escanea, guarda y pregunta. Todo se lee dentro del celular."
+      hero={
+        <Row gap={10}>
+          <Stat tone="hero" label="Documentos" value={String(docs.length)} icon="file-document-multiple-outline" />
+          <Stat tone="hero" label="Por vencer" value={String(alertas.length)} icon="calendar-alert" />
+          <Stat tone="hero" label="Categorías" value={String(categorias)} icon="shape-outline" />
+        </Row>
+      }>
+      <Card title="Pregúntame" subtitle="Respondo citando el documento" icon="chat-question-outline" accent={m.solid}>
         <Row>
           <View style={{ flex: 1 }}>
             <Input
