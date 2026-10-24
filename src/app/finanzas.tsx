@@ -2,7 +2,7 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, ScrollView, Text, View } from 'react-native';
 
-import { Badge, Body, Button, Card, Chip, Divider, Display, Empty, Input, ListItem, MicButton, Muted, Overline, Progress, Row, Screen, Stat, useModule, usePalette, type IconName } from '@/components/ui/kit';
+import { Badge, Button, Card, Chip, Divider, Display, Empty, Input, ListItem, MicButton, Muted, Overline, Progress, Row, Screen, Stat, useModule, usePalette, type IconName } from '@/components/ui/kit';
 import { speak, useDictation } from '@/lib/voice';
 import { Font, Spacing, Type } from '@/constants/theme';
 import { formatSoles, summarizeBudgets, type CategoryBudget } from '@/lib/finance/budget';
@@ -197,7 +197,7 @@ export default function PlataScreen() {
 
       <Card title="Movimientos del mes" icon="swap-vertical" accent={m.solid} right={<Badge label={String(movs.length)} color={m.solid} />}>
         {movs.length === 0 ? (
-          <Empty icon="receipt" text="Todavía no registras nada este mes." />
+          <Empty icon="receipt" color={m.solid} text="Todavía no registras nada este mes." />
         ) : (
           movs.map((t) => (
             <ListItem
@@ -207,10 +207,10 @@ export default function PlataScreen() {
               title={t.descripcion}
               subtitle={`${t.fecha} · ${t.categoria} · ${t.cuenta}`}
               right={
-                <Body bold color={t.tipo === 'ingreso' ? p.success : p.text}>
+                <Text style={[Type.bodyStrong, { fontFamily: Font.bold, color: t.tipo === 'ingreso' ? p.success : p.text }]}>
                   {t.tipo === 'ingreso' ? '+' : '−'}
                   {formatSoles(t.monto)}
-                </Body>
+                </Text>
               }
               onLongPress={() => borrar(t)}
             />
