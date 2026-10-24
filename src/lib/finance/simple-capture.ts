@@ -71,8 +71,13 @@ export function today() {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-export function findMonto(lower: string) {
+export function findMonto(texto: string) {
   // "1,200.50", "1200", "25.5", "25,50", "s/25", "s/. 25", "25 soles", "2k", "2 mil"
+  // "cuota 3 de 6" o "12 cuotas" no son montos: los quito antes de buscar.
+  let lower = texto.replace(/\bcuota\s+\d+\s*(?:de|\/)\s*\d+|\b\d+\s*(?:cuotas|meses)\b/g, ' ');
+  // Si un número viene con "S/" o "soles", ese es el monto aunque haya otros antes.
+  const moneda = lower.match(/s\/\.?\s*(\d[\d.,]*)|(\d[\d.,]*)\s*(?:soles|sol|lucas)\b/);
+  if (moneda) lower = (moneda[1] ?? moneda[2]).replace(/[.,]+$/, '');
   const mil = lower.match(/(\d+(?:[.,]\d+)?)\s*(k|mil)\b/);
   if (mil) return Number(mil[1].replace(',', '.')) * 1000;
   const m = lower.match(/(\d{1,3}(?:[.,]\d{3})+(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?)/);

@@ -66,4 +66,14 @@ describe('registro rápido sin IA', () => {
     expect(parseSimple('me yapearon 50')).toMatchObject({ tipo: 'ingreso', cuenta: 'yape' });
     expect(parseSimple('le pliné 20 por el taxi')).toMatchObject({ categoria: 'transporte', cuenta: 'plin' });
   });
+
+  test('prefiero el número que viene con S/ o soles', () => {
+    expect(parseSimple('2 polos por 60 soles')).toMatchObject({ monto: 60, categoria: 'ropa' });
+    expect(parseSimple('3 pasajes S/ 4.50')).toMatchObject({ monto: 4.5 });
+  });
+
+  test('"cuota 3 de 6" no es el monto', () => {
+    expect(parseSimple('cuota 3 de 6 del celular 150')).toMatchObject({ monto: 150, categoria: 'deudas' });
+    expect(parseSimple('celular en 12 cuotas 89')).toMatchObject({ monto: 89 });
+  });
 });
