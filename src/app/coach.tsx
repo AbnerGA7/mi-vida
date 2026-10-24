@@ -192,7 +192,7 @@ function Plan({ profile, onChanged }: { profile: Profile; onChanged: () => void 
         icon="weight-lifter"
         accent={m.solid}
         right={<Badge label={`${hechas.length}/${totalSeries}`} color={hechas.length >= totalSeries ? p.success : m.solid} />}>
-        <Progress value={totalSeries ? hechas.length / totalSeries : 0} color={m.solid} />
+        <Progress value={totalSeries ? hechas.length / totalSeries : 0} color={m.solid} height={10} />
         <Muted>
           {rutina.division}. Calienta 5-10 min antes.
         </Muted>
@@ -213,7 +213,7 @@ function Plan({ profile, onChanged }: { profile: Profile; onChanged: () => void 
         </Card>
       )}
 
-      <Card title="Menú del día" icon="silverware-fork-knife" accent={p.warning}>
+      <Card title="Menú del día" subtitle="Peruano, con tus macros" icon="silverware-fork-knife" accent={p.warning}>
         {menu ? <Body>{menu}</Body> : <Muted>Te armo un menú peruano con tus macros y lo que no comes.</Muted>}
         <Button
           label={menu ? 'Otro menú' : 'Armar mi menú'}
@@ -251,7 +251,7 @@ function ExerciseRow({ ej, hechas, onLogged }: { ej: Ejercicio; hechas: number; 
   const completo = hechas >= ej.series;
 
   return (
-    <View style={{ gap: Spacing.two, paddingVertical: Spacing.two, borderTopWidth: 1, borderTopColor: p.border }}>
+    <View style={{ gap: Spacing.two, paddingTop: Spacing.two, borderTopWidth: 1, borderTopColor: p.border }}>
       <ListItem
         icon={completo ? 'check-circle' : 'dumbbell'}
         iconColor={completo ? p.success : m.solid}
@@ -262,10 +262,10 @@ function ExerciseRow({ ej, hechas, onLogged }: { ej: Ejercicio; hechas: number; 
       {!completo && (
         <Row gap={8}>
           <View style={{ flex: 1 }}>
-            <Input placeholder="kg" value={peso} onChangeText={setPeso} keyboardType="decimal-pad" />
+            <Input placeholder="kg" accent={m.solid} value={peso} onChangeText={setPeso} keyboardType="decimal-pad" />
           </View>
           <View style={{ flex: 1 }}>
-            <Input placeholder="reps" value={reps} onChangeText={setReps} keyboardType="number-pad" />
+            <Input placeholder="reps" accent={m.solid} value={reps} onChangeText={setReps} keyboardType="number-pad" />
           </View>
           <Button label="Serie" icon="plus" color={m.solid} onPress={guardar} style={{ paddingHorizontal: Spacing.three }} />
         </Row>
@@ -296,7 +296,7 @@ function WeeklyCheckin({ onSaved }: { onSaved: () => void }) {
   }
 
   return (
-    <Card title="Registro semanal" icon="clipboard-check-outline" accent={m.solid} right={<Badge label={isoWeek()} color={m.solid} />}>
+    <Card title="Registro semanal" subtitle="Ajusto tu plan con reglas claras" icon="clipboard-check-outline" accent={m.solid} right={<Badge label={isoWeek()} color={m.solid} />}>
       <Input icon="scale-bathroom" placeholder="Peso promedio de la semana (kg)" value={f.peso} onChangeText={set('peso')} keyboardType="decimal-pad" />
       <Row gap={10}>
         <View style={{ flex: 1 }}>
