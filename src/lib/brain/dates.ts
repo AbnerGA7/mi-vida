@@ -59,16 +59,67 @@ export function findDates(texto: string): Found[] {
   return found.sort((a, b) => a.index - b.index);
 }
 
-// Prefiero la fecha que aparece cerca de "vence", "vigencia" o "hasta"; si no, la más lejana.
-export function findExpiration(texto: string): string | null {
+// Palabras que aparecen antes de la fecha de vencimiento…
+const POSITIVAS = /(venc\w*|vigen\w*|hasta|valid[oa]?\s+hasta|caduc\w*|revalidac\w*|expira\w*|fin\s+de\s+vigencia|fecha\s+limite|renovar\s+antes)/g;
+// …y las que marcan fechas que NO son el vencimiento.
+const NEGATIVAS = /(inicio\s+de\s+(?:la\s+)?vigencia|vigencia\s+desde|emision|emitid\w*|expedi\w*|nacimiento|nacid\w*|inscripcion|impresion|impreso|desde|inicio|otorgamiento|registro|firma|suscri\w*|celebrad\w*|atencion)/g;
+// "del 01/01/2026 al 01/01/2027": solo cuentan si van pegadas a la fecha (si no, "vencimiento del SOAT" confunde).
+const DEBILES: [RegExp, number][] = [[/\bal\s*:?\s*$/, 1], [/\bdel\s*:?\s*$/, -1]];
+
+// Busco la palabra clave más cercana antes de la fecha (en ~60 caracteres) y le doy un puntaje.
+function score(lower: string, index: number) {
+  const before = lower.slice(Math.max(0, index - 60), index);
+  for (const [re, valor] of DEBILES) if (re.test(before)) return valor * 2;
+  // Gana la palabra que termina más cerca de la fecha; en empate, la más larga
+  // ("inicio de vigencia" le gana a "vigencia").
+  let best = { fin: -1, largo: 0, valor: 0 };
+  for (const [re, valor] of [[POSITIVAS, 1], [NEGATIVAS, -1]] as const) {
+    for (const m of before.matchAll(re)) {
+      const fin = m.index! + m[0].length;
+      if (fin > best.fin || (fin === best.fin && m[0].length > best.largo)) best = { fin, largo: m[0].length, valor };
+    }
+  }
+  if (best.fin < 0) return 0;
+  // Más cerca de la fecha → más peso.
+  const distancia = before.length - best.fin;
+  return best.valor * (distancia < 25 ? 2 : 1);
+}
+
+export function addYears(fecha: string, years: number) {
+  const [y, m, d] = fecha.split('-').map(Number);
+  return iso(y + years, m, Math.min(d, new Date(Date.UTC(y + years, m, 0)).getUTCDate()));
+}
+
+export type ExpirationHint = {
+  // Documentos que duran un plazo fijo desde que empiezan (el SOAT dura 1 año).
+  vigenciaAnios?: number;
+  hoy?: Date;
+};
+
+// Elijo la fecha con mejor puntaje (la más cercana a "vence", "vigencia", "hasta", "caducidad").
+// En empate gana la más lejana. Una fecha sin palabra clave solo cuenta si es futura (una fecha pasada
+// suelta es casi siempre la de emisión). Si todas son de emisión o nacimiento, no hay vencimiento.
+export function findExpiration(texto: string, hint: ExpirationHint = {}): string | null {
   const dates = findDates(texto);
   if (dates.length === 0) return null;
-  const lower = texto.toLowerCase();
-  const near = dates.filter(({ index }) =>
-    /venc|vigen|hasta|caduc|expira/.test(lower.slice(Math.max(0, index - 40), index)),
-  );
-  const pool = near.length > 0 ? near : dates;
-  return pool.map((d) => d.fecha).sort().at(-1) ?? null;
+  const lower = cleanOcr(texto);
+  const scored = dates.map((d) => ({ ...d, s: score(lower, d.index) }));
+
+  const buenas = scored.filter((d) => d.s > 0);
+  const hoy = hint.hoy ?? new Date();
+  const neutras = scored.filter((d) => d.s === 0 && daysUntil(d.fecha, hoy) > 0);
+  const pool = buenas.length > 0 ? buenas : neutras;
+  if (pool.length > 0) {
+    const max = Math.max(...pool.map((d) => d.s));
+    return pool.filter((d) => d.s === max).map((d) => d.fecha).sort().at(-1) ?? null;
+  }
+  // Solo encontré la fecha de inicio: si sé cuánto dura el documento, calculo el fin.
+  if (hint.vigenciaAnios) {
+    const inicio = scored.filter((d) => /desde|inicio|del\b|emision/.test(lower.slice(Math.max(0, d.index - 40), d.index)));
+    const base = inicio.map((d) => d.fecha).sort().at(-1);
+    if (base) return addYears(base, hint.vigenciaAnios);
+  }
+  return null;
 }
 
 export function daysUntil(fecha: string, today = new Date()) {
