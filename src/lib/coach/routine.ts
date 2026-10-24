@@ -121,13 +121,19 @@ export function adaptToInjuries(rutina: Rutina, lesiones: string | null): Rutina
   if (zonas.length === 0) return rutina;
   const evitar = new Set(zonas.flatMap((zona) => RIESGO[zona]));
   const reemplazo = (ej: Ejercicio) => (evitar.has(ej.alternativa) ? SEGURO[zonas[0]] : ej.alternativa);
+  // La alternativa del nuevo ejercicio tampoco puede ser el que me lastima: si me estanco y
+  // "cambio a la alternativa", no debo volver al ejercicio riesgoso.
+  const otraSegura = (nombre: string) =>
+    Object.values(SEGURO).find((x) => x !== nombre && !evitar.has(x)) ?? nombre;
   return {
     ...rutina,
     sesiones: rutina.sesiones.map((s) => ({
       ...s,
-      ejercicios: s.ejercicios.map((ej) =>
-        evitar.has(ej.nombre) ? { ...ej, nombre: reemplazo(ej), alternativa: ej.nombre } : ej,
-      ),
+      ejercicios: s.ejercicios.map((ej) => {
+        if (!evitar.has(ej.nombre)) return evitar.has(ej.alternativa) ? { ...ej, alternativa: otraSegura(ej.nombre) } : ej;
+        const nombre = reemplazo(ej);
+        return { ...ej, nombre, alternativa: otraSegura(nombre) };
+      }),
     })),
   };
 }
