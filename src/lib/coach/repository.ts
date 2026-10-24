@@ -1,4 +1,4 @@
-import { askAi } from '@/lib/ai';
+import { askAi, type AiOptions } from '@/lib/ai';
 import {
   calorieAdjustment,
   healthCheck,
@@ -133,10 +133,11 @@ export async function listAdjustments() {
 const MENU_SYSTEM = `Eres nutricionista para una persona en Perú. Arma un menú de UN día con comida peruana sencilla
 y accesible (mercado o bodega). Formato:
 Desayuno / Almuerzo / Cena / Snack, cada uno con porciones en gramos y sus kcal y proteína aproximadas.
+Sé breve: una o dos líneas por comida.
 Al final: total del día y una lista de compras corta.
 Prohibido: déficits extremos, ayunos prolongados y suplementos de riesgo.`;
 
-export async function generateMenu(p: Profile) {
+export async function generateMenu(p: Profile, opts: Pick<AiOptions, 'onPartial' | 'signal'> = {}) {
   const { text } = await askAi(
     [
       { role: 'system', content: MENU_SYSTEM },
@@ -146,7 +147,7 @@ export async function generateMenu(p: Profile) {
 No como: ${p.alimentos_excluidos || 'nada en especial'}.`,
       },
     ],
-    { maxTokens: 700 },
+    { maxTokens: 650, temperature: 0.6, ...opts },
   );
   const db = await getDb();
   await db.runAsync('INSERT INTO meal_plans (contenido) VALUES (?)', text);

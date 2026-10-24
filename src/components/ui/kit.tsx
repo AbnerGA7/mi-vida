@@ -314,8 +314,63 @@ export function Row({ children, gap = Spacing.two, style }: { children: ReactNod
   return <View style={[{ flexDirection: 'row', alignItems: 'center', gap }, style]}>{children}</View>;
 }
 
+// Aviso en línea (confirmaciones con "Deshacer", errores con "Reintentar").
+export function Notice({
+  text,
+  tone = 'info',
+  actionLabel,
+  onAction,
+  onClose,
+}: {
+  text: string;
+  tone?: 'info' | 'success' | 'warning' | 'danger';
+  actionLabel?: string;
+  onAction?: () => void;
+  onClose?: () => void;
+}) {
+  const p = usePalette();
+  const color = { info: p.primary, success: p.success, warning: p.warning, danger: p.danger }[tone];
+  const icon: IconName = { info: 'information-outline', success: 'check-circle-outline', warning: 'alert-outline', danger: 'alert-circle-outline' }[tone] as IconName;
+  return (
+    <View style={[styles.notice, { backgroundColor: color + '18', borderColor: color + '55' }]}>
+      <MaterialCommunityIcons name={icon} size={20} color={color} />
+      <Text style={{ color: p.text, flex: 1, fontSize: 14, lineHeight: 20 }}>{text}</Text>
+      {actionLabel && onAction ? (
+        <Pressable onPress={onAction} hitSlop={8}>
+          <Text style={{ color, fontWeight: '800' }}>{actionLabel}</Text>
+        </Pressable>
+      ) : null}
+      {onClose ? (
+        <Pressable onPress={onClose} hitSlop={8}>
+          <MaterialCommunityIcons name="close" size={18} color={p.textSecondary} />
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
+// Texto que se va escribiendo mientras la IA genera, con cursor.
+export function StreamingText({ text, color }: { text: string; color?: string }) {
+  const p = usePalette();
+  return (
+    <Text style={{ color: p.text, fontSize: 15, lineHeight: 22 }}>
+      {text}
+      <Text style={{ color: color ?? p.primary }}> ▍</Text>
+    </Text>
+  );
+}
+
 const styles = StyleSheet.create({
-  content: { padding: Spacing.three, gap: Spacing.three, paddingBottom: BottomTabInset + Spacing.five },
+  notice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingVertical: 10,
+    paddingHorizontal: Spacing.three,
+  },
+  content: { padding: Spacing.three, gap: Spacing.three, paddingBottom: BottomTabInset + Spacing.six + Spacing.four },
   hero: { borderRadius: 24, padding: Spacing.four, marginBottom: Spacing.one },
   heroRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   heroIcon: {

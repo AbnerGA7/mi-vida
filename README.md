@@ -17,6 +17,15 @@ Mi app personal para ordenar mi vida desde el celular: **mi plata, mi cuerpo, mi
 | 🧠 **Segundo cerebro** | Escaneo SOAT, DNI, contratos y pólizas; le pregunto "¿cuándo vence mi SOAT?" | ✅ Listo (v1) |
 | 💪 **Coach** | Calorías y macros, rutina según mis días, registro de series y ajustes por progreso | ✅ Listo (v1) |
 | 🏠 **Panel de vida** | Agenda, correos importantes, tareas y resumen cada mañana por notificación | ✅ Listo (v1) |
+| ✨ **Asistente central** | Un chat (botón flotante en todas las pestañas) que entiende mis 4 módulos y ejecuta acciones | ✅ Listo (v1) |
+
+## ✨ Asistente central
+
+- **Botón ✨ flotante** en todas las pestañas: abre un chat con respuestas que aparecen **palabra por palabra**, botón **Detener**, dictado por voz y sugerencias rápidas.
+- **Acciones al instante, sin IA:** "gasté 15 en taxi con yape", "me pagaron 1500", "recuérdame pagar la luz el viernes!" se registran en código y cada una trae **Deshacer**.
+- **Preguntas con mis datos:** "¿cómo voy con mi plata?", "¿qué tengo hoy?", "¿qué entreno hoy?", "¿cuándo vence mi SOAT?". Le paso un resumen compacto (tareas, agenda, coach y, si la pregunta lo pide, plata y documentos) y responde corto, con una acción concreta.
+- **Privacidad inteligente:** con privacidad estricta, solo incluye plata y documentos cuando la pregunta los necesita (y entonces responde con la IA local); lo demás va a la nube y responde en segundos.
+- Las pantallas se **refrescan solas** cuando el asistente registra algo.
 
 ## 🏠 Panel de vida (pestaña Hoy)
 
@@ -65,13 +74,32 @@ Mi app personal para ordenar mi vida desde el celular: **mi plata, mi cuerpo, mi
 ## 🤖 Cómo funciona la IA híbrida
 
 ```
-¿Hay internet y el dato no es privado?
-   ├─ Sí → Gemini Flash (nube, gratis; alias gemini-flash-latest)
-   │        └─ si falla → Qwen local
-   └─ No → Qwen 2.5 3B (dentro del celular, gratis)
+¿Se puede resolver en código? (gasto común, tarea, vencimiento)
+   └─ Sí → al instante, sin IA
+¿Hay internet y (el dato no es privado o la privacidad estricta está apagada)?
+   ├─ Sí → Gemini (streaming, pensamiento mínimo; modelo ligero para tareas cortas)
+   │        └─ si no empieza a responder en 12 s o falla → IA local
+   └─ No → Qwen local (dentro del celular)
 ```
 
-**La IA local se descarga desde la pestaña ⚙️ Ajustes** (~2 GB, una sola vez y mejor con Wi-Fi). Antes de bajarla reviso que haya espacio libre, y la descarga va a un archivo temporal para que una descarga cortada nunca quede como modelo listo. En Ajustes también puedo probar la IA (híbrida o solo local), ver cuánto tarda y borrar el modelo.
+**Velocidad y estabilidad**
+
+- **Streaming:** las respuestas aparecen palabra por palabra (nube y local) y se pueden **detener**.
+- **Tiempos límite:** la nube tiene 12 s para empezar y 45 s en total; Google Calendar/Gmail, 10 s. Nada se queda colgado.
+- **IA local estable:** las preguntas van en **cola** (una a la vez), se **precarga** en segundo plano al abrir la app, usa contexto de 2048 y, si falla al cargar, se reintenta (antes quedaba rota hasta reiniciar).
+- **Menos texto, más rápido:** a los documentos les mando solo los fragmentos donde aparece lo que pregunto, no las primeras páginas.
+- **Documentos al toque:** se guardan apenas termina el OCR (categoría por palabras clave) y la IA mejora categoría y resumen en segundo plano.
+- **Salida JSON garantizada** en la IA local con gramática (ya no se rompe al registrar gastos raros).
+- **Pantallas a prueba de errores:** si algo falla aparece un aviso con "Reintentar" en vez de un spinner infinito, y si una pantalla se cae hay un botón para recuperarla.
+
+**La IA local se descarga desde ⚙️ Ajustes**, una sola vez y mejor con Wi-Fi. Hay dos opciones:
+
+| Modelo | Peso | Para qué |
+|---|---|---|
+| ⚡ Rápida · Qwen2.5-1.5B | ~1 GB | unas 2× más rápida; ideal para gastos, clasificar y preguntas cortas |
+| 🎯 Precisa · Qwen2.5-3B | ~2 GB | entiende mejor textos largos (el modelo que ya tenía) |
+
+En Ajustes también activo o apago la **privacidad estricta**, despierto la IA local, pruebo la IA (veo cuánto tarda la primera palabra y el total) y borro modelos.
 
 ## 🚀 Cómo correrla
 
@@ -90,6 +118,7 @@ npx expo run:android
 | `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID` | Google Cloud → Credenciales → ID de cliente OAuth tipo Android (paquete `com.abnerga7.mivida`) |
 | `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | Google Cloud → ID de cliente OAuth tipo Web |
 | `EXPO_PUBLIC_GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) (plan gratis) |
+| `EXPO_PUBLIC_GEMINI_FAST_MODEL` | Opcional: modelo ligero para tareas cortas (por defecto `gemini-flash-lite-latest`) |
 
 > En Google Cloud dejo la app OAuth en modo **Testing** con mi correo como usuario de prueba: los permisos de Gmail piden verificación de Google para uso público.
 
@@ -104,7 +133,8 @@ src/
 │  ├─ coach.tsx         pantalla Coach
 │  └─ ajustes.tsx       descarga de la IA local, pruebas y cuenta
 ├─ components/
-│  └─ auth-gate.tsx     login con Google y pantalla de bloqueo
+│  ├─ auth-gate.tsx     login con Google y pantalla de bloqueo
+│  └─ assistant.tsx     botón ✨ flotante y chat del asistente
 └─ lib/
    ├─ config.ts         correo permitido, modelos y llaves
    ├─ session.tsx       sesión y bloqueo automático
@@ -114,7 +144,9 @@ src/
    ├─ google/           Calendar y Gmail en solo lectura
    ├─ auth/             Google y biometría
    ├─ db/               SQLite cifrado y migraciones
-   ├─ ai/               IA local, nube y modo híbrido
+   ├─ assistant.ts      asistente central: acciones en código + chat con contexto
+   ├─ events.ts         aviso entre pantallas para refrescarse solas
+   ├─ ai/               IA local (cola, precarga), nube (streaming, tiempos límite), red y preferencias
    ├─ finance/          presupuestos, consultas y registro rápido
    ├─ brain/            escaneo, OCR, fechas y preguntas a mis documentos
    └─ coach/            macros, rutinas, reglas de ajuste y menú
@@ -133,4 +165,4 @@ src/
 - [ ] Coach v2 (gráficas de progreso y recordatorio semanal)
 - [x] Panel de vida v1 (agenda, correos, tareas y resumen a las 7 am)
 - [ ] Resumen que se recalcula en segundo plano antes de las 7 am
-- [ ] Asistente central: un chat que consulta los 4 módulos
+- [x] Asistente central: un chat que consulta los 4 módulos y registra gastos y tareas
