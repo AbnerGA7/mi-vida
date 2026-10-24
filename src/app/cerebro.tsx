@@ -200,10 +200,10 @@ export default function CerebroScreen() {
       </Card>
 
       {alertas.length > 0 && (
-        <Card title="Por vencer" icon="alert-outline" accent={p.warning}>
+        <Card title="Por vencer" subtitle="Vencidos o en menos de 30 días" icon="alert-outline" accent={p.warning} variant="tinted">
           {alertas.map((d) => {
             const v = vencimiento(d.fecha_vencimiento)!;
-            return <ListItem key={d.id} icon="calendar-alert" iconColor={v.color} title={d.nombre} subtitle={v.texto} />;
+            return <ListItem key={d.id} icon="calendar-alert" iconColor={v.color} title={d.nombre} subtitle={v.texto} onPress={() => opciones(d)} />;
           })}
         </Card>
       )}
