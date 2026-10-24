@@ -14,6 +14,22 @@ describe('JSON de la IA', () => {
     expect(parseJsonLoose('Claro, aquí está: {"tipo": "gasto"} ¡Listo!')).toEqual({ tipo: 'gasto' });
   });
 
+  test('si el modelo repite el objeto, me quedo con el primero', () => {
+    expect(parseJsonLoose('{"a": 1}\n{"a": 2}')).toEqual({ a: 1 });
+  });
+
+  test('respeta llaves dentro de los textos', () => {
+    expect(parseJsonLoose('{"descripcion": "menú {especial}", "monto": 15} gracias')).toEqual({ descripcion: 'menú {especial}', monto: 15 });
+  });
+
+  test('tolera la coma colgante antes de cerrar', () => {
+    expect(parseJsonLoose('{"monto": 25, "tipo": "gasto",}')).toEqual({ monto: 25, tipo: 'gasto' });
+  });
+
+  test('salta llaves sueltas antes del JSON de verdad', () => {
+    expect(parseJsonLoose('Uso {formato}: {"ok": true}')).toEqual({ ok: true });
+  });
+
   test('sin JSON avisa con un error claro', () => {
     expect(() => parseJsonLoose('no sé')).toThrow('La IA no devolvió JSON');
   });
