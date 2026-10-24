@@ -119,6 +119,10 @@ Las pruebas usan textos como los devuelve el OCR de ML Kit y cubren solo la lóg
 
 > En Google Cloud dejo la app OAuth en modo **Testing** con mi correo como usuario de prueba: los permisos de Gmail piden verificación de Google para uso público.
 
+## 🎨 Diseño
+
+Sistema de diseño propio en `src/constants/theme.ts` (paleta clara y oscura, degradado por módulo, tipografía **Plus Jakarta Sans**, radios, sombras y animaciones) y un kit de componentes en `src/components/ui/kit.tsx`: pantallas con portada en degradado que se encoge al hacer scroll, tarjetas, botones con resorte, selector segmentado, micrófono que late, barras animadas y gráficas en `bar-chart.tsx`.
+
 ## 🗂️ Estructura
 
 ```
