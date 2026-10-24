@@ -403,7 +403,7 @@ export function Overline({ children, color }: { children: ReactNode; color?: str
   return <Text style={[Type.overline, { color: color ?? p.textSecondary }]}>{children}</Text>;
 }
 
-export function Row({ children, gap = Spacing.two, style }: { children: ReactNode; gap?: number; style?: ViewStyle }) {
+export function Row({ children, gap = Spacing.two, style }: { children: ReactNode; gap?: number; style?: StyleProp<ViewStyle> }) {
   return <View style={[{ flexDirection: 'row', alignItems: 'center', gap }, style]}>{children}</View>;
 }
 
