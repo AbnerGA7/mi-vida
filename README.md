@@ -62,6 +62,11 @@ Mi app personal para ordenar mi vida desde el celular: **mi plata, mi cuerpo, mi
 - **Recordatorio semanal** cada domingo a las 6 pm para hacer el registro.
 - **Menú peruano del día** generado con IA según mis macros y lo que no como.
 
+## 🎙️ Voz
+
+- **Dictado** en es-PE en Mi plata y el Segundo cerebro, con pistas para que entienda "SOAT", "brevete" o "Rímac" y correcciones de lo que suele entender mal.
+- **Respuestas en voz alta** con la mejor voz en español instalada (primero de Perú): las fechas se leen como "15 de marzo de 2027" y los montos como soles y céntimos.
+
 ## 🔐 Seguridad
 
 - **Solo yo entro:** el login con Google rechaza cualquier correo que no sea el mío.
