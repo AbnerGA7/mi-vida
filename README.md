@@ -84,6 +84,8 @@ Mi app personal para ordenar mi vida desde el celular: **mi plata, mi cuerpo, mi
    └─ No → Qwen 2.5 3B (dentro del celular, gratis)
 ```
 
+Para que la IA local responda rápido: el modelo se precarga al abrir una pantalla que lo usa, usa memoria mapeada y flash attention, atiende una pregunta a la vez (las demás esperan en cola), corta en las marcas de fin de Qwen y muestra la respuesta mientras se escribe. La nube se corta a los 25 s para caer a la local con mala señal, y lo privado ni consulta la red.
+
 **La IA local se descarga desde la pestaña ⚙️ Ajustes** (~2 GB, una sola vez y mejor con Wi-Fi). Antes de bajarla reviso que haya espacio libre, y la descarga va a un archivo temporal para que una descarga cortada nunca quede como modelo listo. En Ajustes también puedo probar la IA (híbrida o solo local), ver cuánto tarda y borrar el modelo.
 
 ## 🚀 Cómo correrla
