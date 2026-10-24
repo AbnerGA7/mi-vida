@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Image } from 'expo-image';
 import { RefreshControl, StyleSheet, Text, View } from 'react-native';
 
+import { AssistantCard } from '@/components/assistant/assistant-card';
 import { alpha, Badge, Body, Button, Card, Divider, Empty, Input, ListItem, Muted, Row, Screen, Stat, useModule, usePalette } from '@/components/ui/kit';
 import { Font, Spacing, Type } from '@/constants/theme';
 import { useGoogleAuthRequest } from '@/lib/auth/google';
@@ -138,6 +139,8 @@ export default function HoyScreen() {
           <Button label="Conectar Google" icon="link-variant" disabled={!request} onPress={() => promptAsync()} />
         </Card>
       )}
+
+      <AssistantCard />
 
       <Card
         title="Agenda de hoy"
