@@ -3,6 +3,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { askAi, type AiSource } from '@/lib/ai';
 import { docsDeTipo, fastAnswer, pasajes, toFtsQuery } from '@/lib/brain/answer';
 import { tipoDesdePregunta } from '@/lib/brain/classify';
+import { formatFecha } from '@/lib/brain/dates';
 import type { ExtractedDocument } from '@/lib/brain/extract';
 import { getDb } from '@/lib/db';
 
@@ -54,7 +55,6 @@ export async function listDocuments() {
   );
 }
 
-
 export async function searchDocuments(pregunta: string, limit = 5) {
   const query = toFtsQuery(pregunta);
   if (!query) return [];
@@ -67,10 +67,11 @@ export async function searchDocuments(pregunta: string, limit = 5) {
   );
 }
 
-const SYSTEM = `Respondes preguntas sobre MIS documentos personales usando SOLO los fragmentos dados.
-- Primera línea: el dato exacto.
-- Después: "Fuente: [n] nombre del documento".
-- Si el dato no está en los fragmentos, di "No lo encuentro en tus documentos" y sugiere qué documento subir.
+const SYSTEM = `Respondes preguntas sobre MIS documentos personales usando SOLO los fragmentos dados (texto leído con OCR).
+- Responde en 1 o 2 frases cortas y naturales, porque se leen en voz alta. Primero el dato exacto.
+- Escribe las fechas como "15 de marzo de 2027" y los montos como "S/ 120".
+- Termina con "Fuente: [n]".
+- Si el dato no está en los fragmentos, di "No lo encuentro en tus documentos" y sugiere qué documento subir. Nunca inventes.
 - Nunca muestres números completos de DNI, cuentas o tarjetas: solo los últimos 4 dígitos.
 - No des interpretaciones legales.`;
 
@@ -102,16 +103,21 @@ export async function askDocuments(pregunta: string): Promise<Answer> {
   const contexto = fuentes
     .map(
       (d, i) =>
-        `[${i + 1}] ${d.nombre} (${d.categoria}${d.fecha_vencimiento ? `, vence ${d.fecha_vencimiento}` : ''})\n${pasajes(d.texto ?? '', pregunta)}`,
+        `[${i + 1}] ${d.nombre} (${d.categoria}${d.fecha_vencimiento ? `, vence ${formatFecha(d.fecha_vencimiento)}` : ''})\n${pasajes(d.texto ?? '', pregunta)}`,
     )
     .join('\n\n');
 
   const { text, source } = await askAi(
     [
       { role: 'system', content: SYSTEM },
-      { role: 'user', content: `Fragmentos:\n${contexto}\n\nPregunta: ${pregunta}` },
+      { role: 'user', content: `Hoy es ${formatFecha(today())}.\n\nFragmentos:\n${contexto}\n\nPregunta: ${pregunta}` },
     ],
-    { privado: true, maxTokens: 300 },
+    { privado: true, maxTokens: 160, temperature: 0.1 },
   );
   return { texto: text, fuentes, source };
+}
+
+function today() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
