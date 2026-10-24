@@ -2,6 +2,7 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, Text, View } from 'react-native';
 
+import { ProgressCard } from '@/components/coach/progress-card';
 import { Badge, Body, Button, Card, Display, Input, ListItem, Muted, Overline, Progress, Row, Screen, Segmented, Skeleton, Stat, useModule, usePalette } from '@/components/ui/kit';
 import { Spacing, Type } from '@/constants/theme';
 import type { Log } from '@/lib/coach/adjust';
@@ -196,6 +197,9 @@ function Plan({ profile, onChanged }: { profile: Profile; onChanged: () => void 
       </Card>
 
       <WeeklyCheckin onSaved={() => Promise.all([cargar(), onChanged()])} />
+
+      {/* Se vuelve a montar al registrar una serie o un ajuste, así las barras se actualizan al toque. */}
+      <ProgressCard key={`${hechas.length}-${ajustes.length}`} />
 
       {ajustes.length > 0 && (
         <Card title="Ajustes a mi plan" icon="tune-variant" accent={m.solid}>
