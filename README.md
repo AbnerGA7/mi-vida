@@ -104,7 +104,7 @@ La APK se compila solo para **arm64-v8a**, con R8 y reducción de recursos en re
 ### Pruebas
 
 ```bash
-npx tsc --noEmit   # tipos
+npm run typecheck # tipos (tsc --noEmit)
 npm test           # bun test: clasificación, fechas, respuestas, voz, boletas, pagos, metas y progreso
 ```
 
