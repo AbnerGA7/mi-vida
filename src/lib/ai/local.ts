@@ -44,8 +44,11 @@ function getContext() {
   contextPromise ??= initLlama({
     model: modelPath,
     n_ctx: 4096,
+    n_batch: 512,
     // Mando capas a la GPU del celular cuando se puede.
     n_gpu_layers: 99,
+    // Mantengo el modelo en RAM mapeado: la segunda pregunta ya no vuelve a leerlo del disco.
+    use_mmap: true,
   });
   return contextPromise;
 }
