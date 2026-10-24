@@ -29,7 +29,7 @@ export type AskCloud = (nombre: string) => Promise<boolean>;
 const DOCS_DIR = `${FileSystem.documentDirectory}docs/`;
 // Con menos de esto asumo que el OCR no pudo leer el PDF (letra muy chica o escaneo borroso).
 const MIN_TEXTO_UTIL = 80;
-
+const ESCANEO = 'Escaneo';
 
 export async function scanWithCamera(): Promise<PickedFile | null> {
   const perm = await ImagePicker.requestCameraPermissionsAsync();
@@ -37,7 +37,7 @@ export async function scanWithCamera(): Promise<PickedFile | null> {
   const res = await ImagePicker.launchCameraAsync({ quality: 0.9 });
   if (res.canceled) return null;
   const asset = res.assets[0];
-  return { uri: asset.uri, nombre: `Escaneo ${new Date().toLocaleDateString('es-PE')}`, mime: 'image/jpeg' };
+  return { uri: asset.uri, nombre: `${ESCANEO} ${new Date().toLocaleDateString('es-PE')}`, mime: 'image/jpeg' };
 }
 
 export async function pickFile(): Promise<PickedFile | null> {
@@ -141,20 +141,23 @@ async function classify(nombre: string, texto: string) {
   }
 }
 
-export async function extractFromStored(
-  nombre: string,
-  ruta: string,
-  mime: string,
-  askCloud?: AskCloud,
-): Promise<ExtractedDocument> {
+async function extract(nombre: string, ruta: string, mime: string, askCloud?: AskCloud) {
   const texto = await readText(mime, ruta, nombre, askCloud);
-  const { categoria, resumen, vigenciaAnios } = await classify(nombre, texto);
-  return { nombre, ruta, texto, categoria, resumen, fecha_vencimiento: findExpiration(texto, { vigenciaAnios }) };
+  const { categoria, resumen, tipo, vigenciaAnios } = await classify(nombre, texto);
+  const doc: ExtractedDocument = { nombre, ruta, texto, categoria, resumen, fecha_vencimiento: findExpiration(texto, { vigenciaAnios }) };
+  return { doc, tipo };
+}
+
+export async function extractFromStored(nombre: string, ruta: string, mime: string, askCloud?: AskCloud) {
+  return (await extract(nombre, ruta, mime, askCloud)).doc;
 }
 
 export async function processFile(file: PickedFile, askCloud?: AskCloud): Promise<ExtractedDocument> {
   const ruta = await storePrivately(file);
-  return extractFromStored(file.nombre, ruta, file.mime, askCloud);
+  const { doc, tipo } = await extract(file.nombre, ruta, file.mime, askCloud);
+  // "Escaneo 24/10/2026" no dice nada: si reconocí el documento le pongo su nombre ("SOAT 24/10/2026").
+  if (tipo && file.nombre.startsWith(ESCANEO)) doc.nombre = file.nombre.replace(ESCANEO, tipo);
+  return doc;
 }
 
 export function mimeFromPath(ruta: string) {
