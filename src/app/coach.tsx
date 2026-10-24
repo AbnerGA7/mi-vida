@@ -21,6 +21,7 @@ import {
 } from '@/lib/coach/repository';
 import { adaptToInjuries, buildRoutine, todaySession, type Ejercicio } from '@/lib/coach/routine';
 import { isoWeek } from '@/lib/coach/progress';
+import { scheduleWeeklyCheckinReminder } from '@/lib/coach/reminder';
 import { today } from '@/lib/finance/quick-capture';
 
 const num = (s: string) => Number(s.replace(',', '.'));
@@ -28,7 +29,12 @@ const num = (s: string) => Number(s.replace(',', '.'));
 export default function CoachScreen() {
   const [profile, setProfile] = useState<Profile | null | undefined>(undefined);
 
-  const cargar = useCallback(async () => setProfile(await getProfile()), []);
+  const cargar = useCallback(async () => {
+    const perfil = await getProfile();
+    setProfile(perfil);
+    // Con un plan armado, me recuerda cada domingo hacer el registro semanal.
+    if (perfil) scheduleWeeklyCheckinReminder().catch(() => {});
+  }, []);
   useFocusEffect(
     useCallback(() => {
       cargar();
