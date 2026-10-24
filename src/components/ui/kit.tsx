@@ -797,16 +797,16 @@ export function Notice({
   const color = { info: p.primary, success: p.success, warning: p.warning, danger: p.danger }[tone];
   const icon: IconName = { info: 'information-outline', success: 'check-circle-outline', warning: 'alert-outline', danger: 'alert-circle-outline' }[tone] as IconName;
   return (
-    <View style={[styles.notice, { backgroundColor: color + '18', borderColor: color + '55' }]}>
+    <View style={[styles.notice, { backgroundColor: color + '18', borderColor: color + '55' }]} accessibilityLiveRegion="polite">
       <MaterialCommunityIcons name={icon} size={20} color={color} />
       <Text style={{ color: p.text, flex: 1, fontSize: 14, lineHeight: 20 }}>{text}</Text>
       {actionLabel && onAction ? (
-        <Pressable onPress={onAction} hitSlop={8}>
+        <Pressable onPress={onAction} hitSlop={8} accessibilityRole="button" accessibilityLabel={actionLabel}>
           <Text style={{ color, fontWeight: '800' }}>{actionLabel}</Text>
         </Pressable>
       ) : null}
       {onClose ? (
-        <Pressable onPress={onClose} hitSlop={8}>
+        <Pressable onPress={onClose} hitSlop={8} accessibilityRole="button" accessibilityLabel="Cerrar aviso">
           <MaterialCommunityIcons name="close" size={18} color={p.textSecondary} />
         </Pressable>
       ) : null}
