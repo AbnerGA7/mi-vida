@@ -56,4 +56,9 @@ describe('registro rápido sin IA', () => {
     expect(parseSimple('2 mil de alquiler')).toMatchObject({ monto: 2000 });
     expect(parseSimple('sueldo 1.5k')).toMatchObject({ monto: 1500, tipo: 'ingreso' });
   });
+
+  test('"con tarjeta" es la forma de pago, no una deuda', () => {
+    expect(parseSimple('pagué con tarjeta 80 zapatillas')).toMatchObject({ categoria: 'ropa' });
+    expect(parseSimple('150 de la tarjeta')).toMatchObject({ categoria: 'deudas' });
+  });
 });
