@@ -8,7 +8,7 @@ import { adaptToInjuries, buildRoutine, todaySession } from '@/lib/coach/routine
 import { formatSoles, summarizeBudgets } from '@/lib/finance/budget';
 import { listBudgets, spentByCategory } from '@/lib/finance/repository';
 import { horaCorta, type Correo, type Evento } from '@/lib/google/api';
-import { taskBucket, upcomingTasks } from '@/lib/tasks';
+import { taskBucket, upcomingTasks, type Tarea } from '@/lib/tasks';
 
 export const BRIEF_HOUR = 7;
 const NOTIF_KEY = 'brief_notification_id';
@@ -16,9 +16,10 @@ const NOTIF_KEY = 'brief_notification_id';
 export type Brief = { titular: string; lineas: string[] };
 
 // El resumen se arma en código con mis datos: nada sale del celular para escribirlo.
-export async function buildBrief(eventos: Evento[] = [], correos: Correo[] = []): Promise<Brief> {
+// Si ya tengo las tareas cargadas las paso para no volver a consultarlas.
+export async function buildBrief(eventos: Evento[] = [], correos: Correo[] = [], pendientes?: Tarea[]): Promise<Brief> {
   const [tareas, budgets, spent, docs, profile] = await Promise.all([
-    upcomingTasks(),
+    pendientes ?? upcomingTasks(),
     listBudgets(),
     spentByCategory(),
     listDocuments(),
