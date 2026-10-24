@@ -22,7 +22,13 @@ describe('resumen del día', () => {
   test('lo más importante es la tarea urgente de prioridad alta', () => {
     const b = composeBrief({ ...vacio, tareas: [tarea('lavar', '2026-10-24'), tarea('pagar luz', '2026-10-23', 'alta')] }, HOY);
     expect(b.titular).toBe('Sin reuniones, lo más importante: pagar luz.');
-    expect(b.lineas).toContain('✅ 2 tarea(s) para hoy (1 vencida/s)');
+    expect(b.lineas).toContain('✅ 2 tareas para hoy (1 vencida)');
+  });
+
+  test('escribe singular y plural bien en vez de "(s)"', () => {
+    const correo = { id: '1', de: 'Banco', asunto: 'Estado', fragmento: '' };
+    const b = composeBrief({ ...vacio, correos: [correo], tareas: [tarea('pan', '2026-10-24')] }, HOY);
+    expect(b.lineas).toEqual(['✅ 1 tarea para hoy', '📧 1 correo importante sin leer']);
   });
 
   test('avisa de los pagos fijos de los próximos 3 días', () => {
