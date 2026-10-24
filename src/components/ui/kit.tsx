@@ -15,7 +15,6 @@ import {
 import {
   ActivityIndicator,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -40,7 +39,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   BottomTabInset,
@@ -122,11 +121,18 @@ export function Appear({ index = 0, children, style }: { index?: number; childre
   );
 }
 
+const HERO_RADIUS = 32;
+const HERO_OVERLAP = 28;
+const COMPACT_HEIGHT = 52;
+
+// Pantalla con portada en degradado del módulo y encabezado compacto que aparece al hacer scroll.
 export function Screen({
   module,
   icon,
   title,
+  eyebrow,
   subtitle,
+  hero,
   children,
   refreshControl,
   right,
@@ -134,43 +140,111 @@ export function Screen({
   module: ModuleKey;
   icon: IconName;
   title: string;
+  eyebrow?: string;
   subtitle?: string;
+  hero?: ReactNode;
   children: ReactNode;
   refreshControl?: ReactElement<RefreshControlProps>;
   right?: ReactNode;
 }) {
   const p = usePalette();
   const m = ModuleColors[module];
+  const insets = useSafeAreaInsets();
+  const scrollY = useSharedValue(0);
+
+  const onScroll = useAnimatedScrollHandler((e) => {
+    scrollY.value = e.contentOffset.y;
+  });
+
+  // La portada se desliza un poco más lento que el scroll y se desvanece.
+  const heroContent = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [0, 160], [1, 0.25], Extrapolation.CLAMP),
+    transform: [
+      { translateY: interpolate(scrollY.value, [-120, 0, 200], [-30, 0, 60], Extrapolation.CLAMP) },
+      { scale: interpolate(scrollY.value, [-120, 0], [1.06, 1], Extrapolation.CLAMP) },
+    ],
+  }));
+  const orbs = useAnimatedStyle(() => ({
+    transform: [{ translateY: interpolate(scrollY.value, [0, 200], [0, 40], Extrapolation.CLAMP) }],
+  }));
+  const compact = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [90, 150], [0, 1], Extrapolation.CLAMP),
+    transform: [{ translateY: interpolate(scrollY.value, [90, 150], [-8, 0], Extrapolation.CLAMP) }],
+  }));
+
+  const refresh = refreshControl
+    ? cloneElement(refreshControl, {
+        tintColor: '#FFFFFF',
+        colors: [m.solid],
+        progressBackgroundColor: p.backgroundElement,
+        progressViewOffset: insets.top,
+      })
+    : undefined;
+
+  const items = Children.toArray(children);
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: p.background }} edges={['top']}>
-      <ScrollView
-        contentContainerStyle={styles.content}
+    <View style={{ flex: 1, backgroundColor: p.background }}>
+      <StatusBar style="light" />
+      <Animated.ScrollView
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={{ paddingBottom: BottomTabInset + Spacing.five }}
         keyboardShouldPersistTaps="handled"
-        refreshControl={refreshControl}
+        refreshControl={refresh}
         showsVerticalScrollIndicator={false}>
         <LinearGradient
-          colors={[m.solid, shade(m.solid)]}
+          colors={m.gradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={styles.hero}>
-          <View style={styles.heroRow}>
-            <View style={styles.heroIcon}>
-              <MaterialCommunityIcons name={icon} size={26} color="#FFFFFF" />
+          style={[styles.hero, { paddingTop: insets.top + Spacing.three }]}>
+          <Animated.View style={[StyleSheet.absoluteFill, orbs]} pointerEvents="none">
+            <View style={[styles.orb, { width: 260, height: 260, top: -90, right: -80 }]} />
+            <View style={[styles.orb, { width: 160, height: 160, bottom: -50, left: -40, opacity: 0.6 }]} />
+            <View style={[styles.orbRing, { width: 120, height: 120, top: insets.top + 40, right: 36 }]} />
+          </Animated.View>
+
+          <Animated.View style={[{ gap: Spacing.three }, heroContent]}>
+            <View style={styles.heroTop}>
+              <View style={styles.heroIcon}>
+                <MaterialCommunityIcons name={icon} size={22} color="#FFFFFF" />
+              </View>
+              {eyebrow ? <Text style={styles.heroEyebrow}>{eyebrow}</Text> : null}
+              <View style={{ flex: 1 }} />
+              {right}
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.heroTitle}>{title}</Text>
+            <View style={{ gap: Spacing.one }}>
+              <Text style={styles.heroTitle} numberOfLines={2}>
+                {title}
+              </Text>
               {subtitle ? <Text style={styles.heroSubtitle}>{subtitle}</Text> : null}
             </View>
-            {right}
-          </View>
+            {hero}
+          </Animated.View>
         </LinearGradient>
-        {children}
-      </ScrollView>
-    </SafeAreaView>
+
+        <View style={styles.content}>
+          {items.map((child, i) => (
+            <Appear key={isValidElement(child) && child.key != null ? child.key : i} index={i}>
+              {child}
+            </Appear>
+          ))}
+        </View>
+      </Animated.ScrollView>
+
+      <Animated.View pointerEvents="none" style={[styles.compact, { height: insets.top + COMPACT_HEIGHT }, compact]}>
+        <LinearGradient colors={[m.gradient[1], m.gradient[2]]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
+        <View style={[styles.compactRow, { marginTop: insets.top }]}>
+          <MaterialCommunityIcons name={icon} size={18} color="#FFFFFF" />
+          <Text style={styles.compactTitle} numberOfLines={1}>
+            {title}
+          </Text>
+        </View>
+      </Animated.View>
+    </View>
   );
 }
 
-// Oscurece un color hex para el final del degradado.
 type CardVariant = 'default' | 'tinted' | 'outline';
 
 export function Card({
@@ -694,18 +768,33 @@ export function Row({ children, gap = Spacing.two, style }: { children: ReactNod
 }
 
 const styles = StyleSheet.create({
-  hero: { borderRadius: 24, padding: Spacing.four, marginBottom: Spacing.one },
+  hero: {
+    paddingHorizontal: Spacing.four - 4,
+    paddingBottom: Spacing.four + HERO_OVERLAP,
+    borderBottomLeftRadius: HERO_RADIUS,
+    borderBottomRightRadius: HERO_RADIUS,
+    overflow: 'hidden',
+  },
+  orb: { position: 'absolute', borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.10)' },
+  orbRing: { position: 'absolute', borderRadius: 999, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.14)' },
+  heroTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two + 2, minHeight: 40 },
   heroIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.22)',
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heroTitle: { color: '#FFFFFF', fontSize: 26, fontWeight: '800' },
-  heroSubtitle: { color: 'rgba(255,255,255,0.9)', fontSize: 14, marginTop: 2 },
-  content: { padding: Spacing.three, gap: Spacing.three, paddingBottom: BottomTabInset + Spacing.five },
+  heroEyebrow: { ...Type.overline, color: 'rgba(255,255,255,0.85)' },
+  heroTitle: { ...Type.h1, fontSize: 30, lineHeight: 36, color: '#FFFFFF' },
+  heroSubtitle: { ...Type.callout, color: 'rgba(255,255,255,0.85)' },
+  content: { paddingHorizontal: Spacing.three, gap: Spacing.three, marginTop: -HERO_OVERLAP },
+  compact: { position: 'absolute', top: 0, left: 0, right: 0, overflow: 'hidden', justifyContent: 'center' },
+  compactRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingHorizontal: Spacing.four - 4, height: COMPACT_HEIGHT },
+  compactTitle: { ...Type.title, fontSize: 17, color: '#FFFFFF', flex: 1 },
   card: { borderRadius: Radius.lg + 2, padding: Spacing.three + 2, gap: Spacing.three - 2, borderWidth: StyleSheet.hairlineWidth },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two + 4 },
   cardIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
@@ -763,6 +852,4 @@ const styles = StyleSheet.create({
   itemIcon: { width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   empty: { alignItems: 'center', gap: Spacing.two + 4, paddingVertical: Spacing.four },
   emptyIcon: { width: 56, height: 56, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-
-  heroRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
 });
