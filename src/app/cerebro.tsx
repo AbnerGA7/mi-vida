@@ -181,6 +181,7 @@ export default function CerebroScreen() {
           <View style={{ flex: 1 }}>
             <Input
               icon="magnify"
+              accent={m.solid}
               value={escuchando ? parcial : pregunta}
               onChangeText={setPregunta}
               onSubmitEditing={() => preguntar()}
@@ -192,22 +193,30 @@ export default function CerebroScreen() {
         </Row>
         <Button label="Preguntar" icon="send" color={m.solid} loading={pensando} onPress={() => preguntar()} />
         {respuesta ? (
-          <Card style={{ backgroundColor: m.soft, borderColor: 'transparent' }}>
+          <Card variant="tinted" accent={m.solid}>
+            <Row gap={6}>
+              <Icon name="creation" size={16} color={m.solid} />
+              <Overline color={m.solid}>Respuesta</Overline>
+            </Row>
             <Body>{respuesta.texto}</Body>
-            {respuesta.fuentes.map((f, i) => (
-              <Row key={f.id} gap={6}>
-                <Badge label={`[${i + 1}]`} color={m.solid} />
-                <Muted size={12}>{f.nombre}</Muted>
-              </Row>
-            ))}
+            {respuesta.fuentes.length > 0 ? (
+              <View style={{ gap: Spacing.one + 2 }}>
+                {respuesta.fuentes.map((f, i) => (
+                  <Row key={f.id} gap={6}>
+                    <Badge label={`${i + 1}`} color={m.solid} />
+                    <Muted size={12}>{f.nombre}</Muted>
+                  </Row>
+                ))}
+              </View>
+            ) : null}
             {respuesta.source === 'reglas' ? (
-              <Muted size={12}>⚡ Respondido al instante con tus datos guardados</Muted>
+              <Muted size={12}>Respondido al instante con tus datos guardados</Muted>
             ) : respuesta.source ? (
-              <Muted size={12}>🔒 Respondido con IA {respuesta.source}</Muted>
+              <Muted size={12}>Respondido con IA {respuesta.source}</Muted>
             ) : null}
             <Row>
-              <Button label="Escuchar" icon="volume-high" variant="ghost" color={m.solid} onPress={() => speak(respuesta.texto)} />
-              <Button label="Callar" icon="volume-off" variant="ghost" color={m.solid} onPress={stopSpeaking} />
+              <Button label="Escuchar" icon="volume-high" variant="secondary" size="sm" onPress={() => speak(respuesta.texto)} />
+              <Button label="Callar" icon="volume-off" variant="ghost" size="sm" color={m.solid} onPress={stopSpeaking} />
             </Row>
           </Card>
         ) : null}
