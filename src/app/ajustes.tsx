@@ -127,28 +127,36 @@ export default function AjustesScreen() {
         {listo ? <Button label="Borrar IA local" icon="trash-can-outline" variant="danger" onPress={borrar} /> : null}
       </Card>
 
-      <Card title="IA en la nube (con internet)" icon="cloud-outline" accent={p.primary}>
+      <Card title="IA en la nube" subtitle="Cuando hay señal" icon="cloud-outline" accent={p.primary}>
         <Muted>{GEMINI_MODEL} · plan gratis de Google</Muted>
         <Row>{estado(hasCloudKey(), 'Clave configurada', 'Falta la clave en el .env')}</Row>
         <Muted size={12}>Finanzas y documentos siempre usan la IA local: esos datos nunca salen del celular.</Muted>
       </Card>
 
-      <Card title="Probar la IA" icon="flask-outline" accent={p.primary}>
+      <Card title="Probar la IA" subtitle="Mide cuánto tarda en responder" icon="flask-outline" accent={p.primary}>
         <Row gap={10}>
           <Button label="Híbrida" icon="swap-horizontal" style={{ flex: 1 }} loading={probando} onPress={() => probar(false)} />
           <Button label="Solo local" icon="cellphone-lock" variant="secondary" style={{ flex: 1 }} disabled={probando} onPress={() => probar(true)} />
         </Row>
-        {prueba ? <Body>{prueba}</Body> : null}
+        {prueba ? (
+          <Card variant="tinted" accent={p.primary}>
+            <Body>{prueba}</Body>
+          </Card>
+        ) : null}
       </Card>
 
       <Card title="Seguridad" icon="shield-lock-outline" accent={m.solid}>
         <ListItem icon="google" iconColor={accessToken ? p.success : p.warning} title="Google" subtitle={accessToken ? 'Conectado · solo lectura' : 'Desconectado · reconecta desde Hoy'} />
+        <Divider />
         <ListItem icon="database-lock-outline" iconColor={p.success} title="Base de datos cifrada" subtitle="SQLCipher con llave en el almacén seguro" />
+        <Divider />
         <ListItem icon="fingerprint" iconColor={p.success} title="Bloqueo con huella" subtitle="Al abrir y al volver de segundo plano" />
         <Button label="Cerrar sesión" icon="logout" variant="danger" onPress={cerrarSesion} />
       </Card>
 
-      <Muted size={12}>Mi Vida · hecho por Abner con IA local + nube</Muted>
+      <Muted size={12} center>
+        Mi Vida · hecho por Abner con IA local + nube
+      </Muted>
     </Screen>
   );
 }
