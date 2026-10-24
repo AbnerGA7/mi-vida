@@ -12,10 +12,11 @@ export async function askAi(
   messages: ChatMessage[],
   options: AiOptions = {},
 ): Promise<{ text: string; source: AiSource }> {
-  const net = await NetInfo.fetch();
-  const online = Boolean(net.isConnected && net.isInternetReachable !== false);
+  // Lo privado ni siquiera consulta la red: va directo a la local y me ahorro esa espera.
+  const net = options.privado || !hasCloudKey() ? null : await NetInfo.fetch();
+  const online = Boolean(net?.isConnected && net.isInternetReachable !== false);
 
-  if (online && !options.privado && hasCloudKey()) {
+  if (online) {
     try {
       return { text: await completeCloud(messages, options), source: 'nube' };
     } catch {
