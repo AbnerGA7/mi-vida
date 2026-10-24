@@ -273,6 +273,35 @@ export function Button({
 }
 
 // Botón redondo solo con ícono.
+export function IconButton({
+  icon,
+  onPress,
+  color,
+  accessibilityLabel,
+  tone = 'default',
+}: {
+  icon: IconName;
+  onPress: () => void;
+  color?: string;
+  accessibilityLabel: string;
+  tone?: 'default' | 'hero';
+}) {
+  const p = usePalette();
+  const press = usePressScale(0.9);
+  return (
+    <AnimatedPressable
+      onPress={onPress}
+      onPressIn={press.onPressIn}
+      onPressOut={press.onPressOut}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole="button"
+      hitSlop={6}
+      style={[styles.iconButton, { backgroundColor: tone === 'hero' ? 'rgba(255,255,255,0.18)' : p.backgroundSelected }, press.style]}>
+      <MaterialCommunityIcons name={icon} size={20} color={tone === 'hero' ? '#FFFFFF' : (color ?? p.text)} />
+    </AnimatedPressable>
+  );
+}
+
 export function Input({ icon, style, accent, onFocus, onBlur, ...props }: TextInputProps & { icon?: IconName; accent?: string }) {
   const p = usePalette();
   const [focus, setFocus] = useState(false);
@@ -670,6 +699,7 @@ const styles = StyleSheet.create({
   buttonSm: { minHeight: 40, paddingHorizontal: Spacing.three - 2, borderRadius: Radius.sm + 2 },
   buttonLabel: { fontFamily: Font.bold, fontSize: 15.5, letterSpacing: -0.1 },
   buttonLabelSm: { fontFamily: Font.semibold, fontSize: 14 },
+  iconButton: { width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   input: {
     flexDirection: 'row',
     alignItems: 'center',
