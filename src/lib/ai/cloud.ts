@@ -1,6 +1,9 @@
 import { GEMINI_API_KEY, GEMINI_MODEL } from '@/lib/config';
 import type { AiOptions, ChatMessage } from '@/lib/ai/types';
 
+// Con señal mala prefiero caer rápido a la IA local que dejar la pantalla esperando.
+const CLOUD_TIMEOUT_MS = 25000;
+
 export function hasCloudKey() {
   return GEMINI_API_KEY.length > 0;
 }
@@ -51,6 +54,7 @@ export async function completeCloud(messages: ChatMessage[], { maxTokens = 1024,
           ...(json ? { responseMimeType: 'application/json' } : {}),
         },
       }),
+      signal: AbortSignal.timeout(CLOUD_TIMEOUT_MS),
     },
   );
   if (!res.ok) throw new Error(`Gemini respondió ${res.status}`);
