@@ -98,5 +98,16 @@ export const Spacing = {
 
 export const Radius = { sm: 10, md: 14, lg: 20, xl: 28, pill: 999 } as const;
 
+// Sombras suaves en claro; en oscuro la profundidad la da el borde.
+export const Shadow = {
+  light: {
+    card: '0px 1px 2px rgba(16,24,40,0.04), 0px 10px 28px -6px rgba(16,24,40,0.08)',
+    raised: '0px 16px 40px -12px rgba(16,24,40,0.22)',
+  },
+  dark: {
+    raised: '0px 16px 40px -12px rgba(0,0,0,0.6)',
+  },
+} as const;
+
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 export const MaxContentWidth = 800;
