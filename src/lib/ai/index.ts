@@ -5,6 +5,7 @@ import { getAiPrefs } from '@/lib/ai/prefs';
 import { AiCancelled, type AiOptions, type AiSource, type ChatMessage } from '@/lib/ai/types';
 
 export { AiCancelled } from '@/lib/ai/types';
+export { friendlyError, parseJson, parseJsonLoose } from '@/lib/ai/text';
 export { prewarmLocal, warmUpLocal } from '@/lib/ai/local';
 export type { AiOptions, AiSource, ChatMessage } from '@/lib/ai/types';
 
@@ -61,23 +62,4 @@ export async function askAi(messages: ChatMessage[], opts: AiOptions = {}): Prom
     onPartial: onPartial && ((t) => onPartial(t, 'local')),
   });
   return { text, source: 'local' };
-}
-
-// Saca el primer objeto JSON de una respuesta (los modelos chicos a veces agregan texto alrededor).
-export function parseJsonLoose<T = any>(text: string): T {
-  const cleaned = text.replace(/```(?:json)?/gi, '');
-  const start = cleaned.indexOf('{');
-  const end = cleaned.lastIndexOf('}');
-  if (start < 0 || end <= start) throw new Error('La IA no devolvió JSON');
-  return JSON.parse(cleaned.slice(start, end + 1));
-}
-
-// Alias corto que usa Cerebro.
-export const parseJson = parseJsonLoose;
-
-export function friendlyError(e: unknown) {
-  if (e instanceof AiCancelled) return 'Cancelado';
-  const msg = e instanceof Error ? e.message : String(e);
-  if (/Network request failed|network/i.test(msg)) return 'Sin conexión. Intenta de nuevo o usa la IA local.';
-  return msg;
 }
