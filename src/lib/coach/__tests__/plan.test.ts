@@ -24,6 +24,12 @@ describe('calorías y macros', () => {
     expect(t.grasa_g).toBe(72);
     expect(t.proteina_g * 4 + t.grasa_g * 9 + t.carbohidratos_g * 4).toBeCloseTo(t.calorias, -1);
   });
+
+  test('el déficit nunca baja del metabolismo basal', () => {
+    const sedentaria: ProfileInput = { edad: 30, sexo: 'mujer', estatura_cm: 155, peso_kg: 50, objetivo: 'grasa', dias_por_semana: 1 };
+    const t = computeTargets(sedentaria);
+    expect(t.calorias).toBe(t.bmr);
+  });
 });
 
 describe('rutina', () => {

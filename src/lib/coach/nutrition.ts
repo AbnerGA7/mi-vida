@@ -42,7 +42,8 @@ const AJUSTE_OBJETIVO: Record<Objetivo, number> = {
 export function computeTargets(p: ProfileInput): Targets {
   const base = bmr(p);
   const tdee = base * activityFactor(p.dias_por_semana);
-  const calorias = Math.round(tdee * AJUSTE_OBJETIVO[p.objetivo]);
+  // Nunca bajo de mi metabolismo basal: un déficit más grande ya es una dieta extrema.
+  const calorias = Math.round(Math.max(tdee * AJUSTE_OBJETIVO[p.objetivo], base));
 
   const proteina_g = Math.round(p.peso_kg * (p.objetivo === 'grasa' ? 2.2 : 2));
   const grasa_g = Math.round(p.peso_kg * 0.9);
