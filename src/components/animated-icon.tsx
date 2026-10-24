@@ -6,7 +6,7 @@ import Animated, { Easing, Keyframe } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
 const INITIAL_SCALE_FACTOR = Dimensions.get('screen').height / 90;
-const DURATION = 600;
+const DURATION = 650;
 
 export function AnimatedSplashOverlay() {
   const [animate, setAnimate] = useState(false);
@@ -14,22 +14,21 @@ export function AnimatedSplashOverlay() {
 
   if (!visible) return null;
 
+  // Continúa la pantalla de inicio nativa: el logo crece un poco y todo se desvanece.
   const splashKeyframe = new Keyframe({
     0: {
       transform: [{ scale: 1 }],
       opacity: 1,
     },
-    20: {
+    30: {
+      transform: [{ scale: 0.94 }],
       opacity: 1,
-    },
-    70: {
-      opacity: 0,
-      easing: Easing.elastic(0.7),
+      easing: Easing.out(Easing.quad),
     },
     100: {
+      transform: [{ scale: 1.25 }],
       opacity: 0,
-      transform: [{ scale: 1 }],
-      easing: Easing.elastic(0.7),
+      easing: Easing.in(Easing.cubic),
     },
   });
 
