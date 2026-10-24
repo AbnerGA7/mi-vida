@@ -7,6 +7,7 @@ import { Spacing } from '@/constants/theme';
 import { prewarmLocal } from '@/lib/ai';
 import { speak, stopSpeaking, useDictation } from '@/lib/voice';
 import { daysUntil, formatFecha } from '@/lib/brain/dates';
+import { scheduleExpiryReminders } from '@/lib/brain/expiry-notifications';
 import {
   extractFromStored,
   mimeFromPath,
@@ -61,7 +62,12 @@ export default function CerebroScreen() {
   const [pensando, setPensando] = useState(false);
   const [respuesta, setRespuesta] = useState<Answer | null>(null);
 
-  const cargar = useCallback(async () => setDocs(await listDocuments()), []);
+  const cargar = useCallback(async () => {
+    const lista = await listDocuments();
+    setDocs(lista);
+    // Cada vez que cambian mis documentos actualizo los avisos de vencimiento.
+    scheduleExpiryReminders(lista).catch(() => {});
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
