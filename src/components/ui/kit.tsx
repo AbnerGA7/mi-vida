@@ -288,14 +288,39 @@ export function Input({ icon, style, accent, onFocus, onBlur, ...props }: TextIn
 // Botón redondo de micrófono: late con ondas mientras escucha.
 export function MicButton({ escuchando, onPress, color }: { escuchando: boolean; onPress: () => void; color?: string }) {
   const p = usePalette();
+  const press = usePressScale(0.9);
+  const pulse = useSharedValue(0);
   const c = escuchando ? p.danger : (color ?? p.primary);
+
+  useEffect(() => {
+    if (escuchando) {
+      pulse.value = 0;
+      pulse.value = withRepeat(withTiming(1, { duration: 1200 }), -1, false);
+    } else {
+      cancelAnimation(pulse);
+      pulse.value = withTiming(0, { duration: Motion.fast });
+    }
+  }, [escuchando, pulse]);
+
+  const ring = useAnimatedStyle(() => ({
+    opacity: escuchando ? interpolate(pulse.value, [0, 1], [0.45, 0]) : 0,
+    transform: [{ scale: interpolate(pulse.value, [0, 1], [1, 1.7]) }],
+  }));
+
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityLabel={escuchando ? 'Dejar de escuchar' : 'Hablar'}
-      style={({ pressed }) => [styles.mic, { backgroundColor: c, transform: [{ scale: pressed ? 0.94 : escuchando ? 1.06 : 1 }] }]}>
-      <MaterialCommunityIcons name={escuchando ? 'stop' : 'microphone'} size={24} color="#FFFFFF" />
-    </Pressable>
+    <View style={styles.micWrap}>
+      <Animated.View pointerEvents="none" style={[styles.mic, styles.micRing, { backgroundColor: c }, ring]} />
+      <AnimatedPressable
+        onPress={onPress}
+        onPressIn={press.onPressIn}
+        onPressOut={press.onPressOut}
+        accessibilityLabel={escuchando ? 'Dejar de escuchar' : 'Hablar'}
+        accessibilityRole="button"
+        style={[styles.mic, press.style]}>
+        <LinearGradient colors={[c, shade(c)]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[StyleSheet.absoluteFill, { borderRadius: 26 }]} />
+        <MaterialCommunityIcons name={escuchando ? 'stop' : 'microphone'} size={24} color="#FFFFFF" />
+      </AnimatedPressable>
+    </View>
   );
 }
 
@@ -631,7 +656,9 @@ const styles = StyleSheet.create({
     minHeight: 52,
   },
   inputText: { flex: 1, fontSize: 15.5, fontFamily: Font.medium, paddingVertical: 12 },
-  mic: { width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center' },
+  micWrap: { width: 52, height: 52, alignItems: 'center', justifyContent: 'center' },
+  mic: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  micRing: { position: 'absolute' },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
