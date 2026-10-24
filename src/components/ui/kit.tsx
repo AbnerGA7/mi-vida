@@ -481,6 +481,16 @@ export function Empty({ icon, text }: { icon: IconName; text: string }) {
   );
 }
 
+export function Skeleton({ height = 16, width = '100%', radius = Radius.sm }: { height?: number; width?: number | `${number}%`; radius?: number }) {
+  const p = usePalette();
+  const o = useSharedValue(0.5);
+  useEffect(() => {
+    o.value = withRepeat(withSequence(withTiming(1, { duration: 700 }), withTiming(0.5, { duration: 700 })), -1, false);
+  }, [o]);
+  const style = useAnimatedStyle(() => ({ opacity: o.value }));
+  return <Animated.View style={[{ height, width, borderRadius: radius, backgroundColor: p.backgroundSelected }, style]} />;
+}
+
 export function Muted({ children, size = 13, center }: { children: ReactNode; size?: number; center?: boolean }) {
   const p = usePalette();
   return (
