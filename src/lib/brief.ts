@@ -15,6 +15,7 @@ import { taskBucket, upcomingTasks, type Tarea } from '@/lib/tasks';
 export const BRIEF_HOUR = 7;
 const NOTIF_KEY = 'brief_notification_id';
 const NOTIF_CONTENT_KEY = 'brief_notification_content';
+const LAST_REFRESH_KEY = 'brief_last_refresh';
 
 export type Brief = { titular: string; lineas: string[] };
 
@@ -77,13 +78,19 @@ export async function buildBrief(eventos: Evento[] = [], correos: Correo[] = [],
   return { titular, lineas };
 }
 
-// Programo la notificación diaria con el último resumen; se actualiza cada vez que abro la app.
+// Cuándo armé el último resumen (en la app o en segundo plano), para no recalcular de más.
+export function lastBriefRefresh() {
+  return SecureStore.getItemAsync(LAST_REFRESH_KEY);
+}
 
-export async function scheduleMorningBrief(brief: Brief) {
+// Programo la notificación diaria con el último resumen; se actualiza cada vez que abro la app
+// y también en segundo plano, donde no puedo mostrar el diálogo de permiso.
+export async function scheduleMorningBrief(brief: Brief, { pedirPermiso = true } = {}) {
   // Solo pido permiso si todavía no lo tengo (antes lo pedía cada vez que abría Hoy).
   const actual = await Notifications.getPermissionsAsync();
-  const perm = actual.granted ? actual : await Notifications.requestPermissionsAsync();
+  const perm = actual.granted || !pedirPermiso ? actual : await Notifications.requestPermissionsAsync();
   if (!perm.granted) return false;
+  await SecureStore.setItemAsync(LAST_REFRESH_KEY, new Date().toISOString());
 
   const content = {
     title: `☀️ Buenos días: ${brief.titular}`,
