@@ -77,19 +77,28 @@ export async function prewarmLocal() {
 // Qwen a veces sigue escribiendo otro turno; corto en sus marcas de fin.
 const STOP = ['<|im_end|>', '<|endoftext|>', '<|im_start|>'];
 
-export function completeLocal(messages: ChatMessage[], { maxTokens = 512, temperature = 0.3, json }: AiOptions = {}) {
+export function completeLocal(messages: ChatMessage[], { maxTokens = 512, temperature = 0.3, json, onToken }: AiOptions = {}) {
   const run = queue.then(async () => {
     const ctx = await getContext();
-    const result = await ctx.completion({
-      messages,
-      n_predict: maxTokens,
-      temperature,
-      top_p: 0.9,
-      // Qwen 2.5 repite frases si no lo freno un poco.
-      penalty_repeat: 1.1,
-      stop: STOP,
-      ...(json ? { response_format: { type: 'json_schema' as const, json_schema: { strict: true, schema: json } } } : {}),
-    });
+    let parcial = '';
+    const result = await ctx.completion(
+      {
+        messages,
+        n_predict: maxTokens,
+        temperature,
+        top_p: 0.9,
+        // Qwen 2.5 repite frases si no lo freno un poco.
+        penalty_repeat: 1.1,
+        stop: STOP,
+        ...(json ? { response_format: { type: 'json_schema' as const, json_schema: { strict: true, schema: json } } } : {}),
+      },
+      onToken
+        ? (data) => {
+            parcial += data.token;
+            onToken(parcial);
+          }
+        : undefined,
+    );
     return result.text.trim();
   });
   queue = run.catch(() => {});
