@@ -13,9 +13,9 @@ Mi app personal para ordenar mi vida desde el celular: **mi plata, mi cuerpo, mi
 |---|---|---|
 | 🔐 **Acceso** | Login con Google solo para mi correo + huella/PIN + base de datos cifrada | ✅ Listo |
 | 🤖 **IA híbrida** | Qwen 2.5 3B dentro del celular sin internet, Gemini en la nube cuando hay señal | ✅ Listo |
-| 💰 **Asesor financiero** | Registro rápido ("25 menú con yape"), balance del mes y presupuestos con semáforo | ✅ Listo (v1) |
-| 🧠 **Segundo cerebro** | Escaneo SOAT, DNI, contratos y pólizas; le pregunto "¿cuándo vence mi SOAT?" | ✅ Listo (v1) |
-| 💪 **Coach** | Calorías y macros, rutina según mis días, registro de series y ajustes por progreso | ✅ Listo (v1) |
+| 💰 **Asesor financiero** | Registro rápido ("25 menú con yape"), presupuestos con semáforo, metas de ahorro, pagos fijos con aviso y boletas con la cámara | ✅ Listo (v2) |
+| 🧠 **Segundo cerebro** | Escaneo SOAT, DNI, contratos y pólizas (también PDF); le pregunto "¿cuándo vence mi SOAT?" y me avisa antes de que venza | ✅ Listo (v2) |
+| 💪 **Coach** | Calorías y macros, rutina según mis días, registro de series, ajustes por progreso, gráficas y recordatorio semanal | ✅ Listo (v2) |
 | 🏠 **Panel de vida** | Agenda, correos importantes, tareas y resumen cada mañana por notificación | ✅ Listo (v1) |
 
 ## 🏠 Panel de vida (pestaña Hoy)
