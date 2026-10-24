@@ -414,6 +414,7 @@ export function Input({ icon, style, accent, onFocus, onBlur, ...props }: TextIn
       ]}>
       {icon ? <MaterialCommunityIcons name={icon} size={20} color={focus ? c : p.textSecondary} /> : null}
       <TextInput
+        accessibilityLabel={props.accessibilityLabel ?? props.placeholder}
         placeholderTextColor={p.textTertiary}
         selectionColor={c}
         cursorColor={c}
