@@ -80,7 +80,10 @@ export function findMonto(lower: string) {
 }
 
 function findCategoria(words: string[]): Categoria | undefined {
-  for (const w of words) {
+  // "con tarjeta" es cómo pagué, no una deuda: lo salto y busco qué compré.
+  const comoPague = (i: number) => words[i] === 'tarjeta' && words[i - 1] === 'con';
+  for (const [i, w] of words.entries()) {
+    if (comoPague(i)) continue;
     if (KEYWORDS[w]) return KEYWORDS[w];
     // plurales simples: "pasajes" → "pasaje", "doctores" → "doctor"
     for (const singular of [w.replace(/s$/, ''), w.replace(/es$/, '')]) {
