@@ -164,9 +164,9 @@ export default function HoyScreen() {
         )}
       </Card>
 
-      <Card title="Tareas" icon="format-list-checks" accent={p.primary} right={<Badge label={String(tareas.length)} color={p.primary} />}>
+      <Card title="Tareas" subtitle="Escribe como hablas" icon="format-list-checks" accent={p.primary} right={<Badge label={String(tareas.length)} color={p.primary} />}>
         <Input
-          icon="plus"
+          icon="plus-circle-outline"
           value={nueva}
           onChangeText={setNueva}
           onSubmitEditing={agregarTarea}
@@ -174,17 +174,18 @@ export default function HoyScreen() {
           returnKeyType="done"
         />
         {tareas.length === 0 ? (
-          <Empty icon="party-popper" text="Sin pendientes para los próximos días." />
+          <Empty icon="party-popper" color={p.success} text="Sin pendientes para los próximos días." />
         ) : (
           tareas.map((t) => {
             const bucket = taskBucket(t);
             return (
               <ListItem
                 key={t.id}
-                icon="checkbox-blank-circle-outline"
+                icon={t.prioridad === 'alta' ? 'alert-circle-outline' : 'checkbox-blank-circle-outline'}
                 iconColor={BUCKET[bucket]}
-                title={`${t.prioridad === 'alta' ? '❗ ' : ''}${t.titulo}`}
-                subtitle={`${bucket}${t.fecha_limite ? ` · ${t.fecha_limite}` : ''}`}
+                title={t.titulo}
+                subtitle={t.fecha_limite ?? undefined}
+                right={<Badge label={bucket} color={BUCKET[bucket]} />}
                 onPress={() => toggleTask(t.id).then(() => cargar())}
                 onLongPress={() => deleteTask(t.id).then(() => cargar())}
               />
