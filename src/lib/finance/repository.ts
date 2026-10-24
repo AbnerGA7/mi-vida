@@ -3,21 +3,7 @@ import type { MonthlyBudget, SpentByCategory } from '@/lib/finance/budget';
 import type { SavingsGoal } from '@/lib/finance/goals';
 import type { Payment } from '@/lib/finance/payments';
 
-export const CATEGORIAS = [
-  'comida',
-  'transporte',
-  'casa',
-  'servicios',
-  'salud',
-  'gym',
-  'estudios',
-  'ocio',
-  'ropa',
-  'deudas',
-  'otros',
-] as const;
-
-export const CUENTAS = ['efectivo', 'yape', 'plin', 'debito', 'credito'] as const;
+export { CATEGORIAS, CUENTAS } from '@/lib/finance/categories';
 
 export type Transaction = {
   id: number;
