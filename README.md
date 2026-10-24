@@ -166,11 +166,11 @@ plugins/
 - [x] Base de datos local cifrada
 - [x] IA híbrida local + nube
 - [x] Asesor financiero v1 (registro rápido, presupuestos y balance)
-- [ ] Asesor financiero v2 (metas de ahorro, alertas de pago, leer boletas con la cámara)
+- [x] Asesor financiero v2 (metas de ahorro, alertas de pago, leer boletas con la cámara)
 - [x] Segundo cerebro v1 (escaneo, OCR, vencimientos y preguntas con fuente)
-- [ ] Segundo cerebro v2 (leer texto de PDF y notificaciones de vencimiento)
+- [x] Segundo cerebro v2 (leer texto de PDF y notificaciones de vencimiento)
 - [x] Coach v1 (macros, rutina, series, registro semanal y menú)
-- [ ] Coach v2 (gráficas de progreso y recordatorio semanal)
+- [x] Coach v2 (gráficas de progreso y recordatorio semanal)
 - [x] Panel de vida v1 (agenda, correos, tareas y resumen a las 7 am)
 - [ ] Resumen que se recalcula en segundo plano antes de las 7 am
 - [ ] Asistente central: un chat que consulta los 4 módulos
