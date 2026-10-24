@@ -109,5 +109,15 @@ export const Shadow = {
   },
 } as const;
 
+// Movimiento: resortes y tiempos compartidos.
+export const Motion = {
+  press: { damping: 18, stiffness: 320, mass: 0.6 },
+  gentle: { damping: 20, stiffness: 180 },
+  fast: 180,
+  base: 280,
+  slow: 520,
+  stagger: 55,
+} as const;
+
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 export const MaxContentWidth = 800;
