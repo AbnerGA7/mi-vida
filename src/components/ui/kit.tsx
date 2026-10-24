@@ -406,14 +406,46 @@ export function Badge({ label, color, icon }: { label: string; color: string; ic
   );
 }
 
-export function Stat({ label, value, color, icon }: { label: string; value: string; color?: string; icon?: IconName }) {
+export function Stat({
+  label,
+  value,
+  color,
+  icon,
+  tone = 'default',
+}: {
+  label: string;
+  value: string;
+  color?: string;
+  icon?: IconName;
+  tone?: 'default' | 'hero';
+}) {
   const p = usePalette();
+  if (tone === 'hero') {
+    return (
+      <View style={[styles.stat, styles.statHero]}>
+        {icon ? <MaterialCommunityIcons name={icon} size={18} color="rgba(255,255,255,0.9)" /> : null}
+        <Text style={[Type.h2, { color: '#FFFFFF' }]} numberOfLines={1} adjustsFontSizeToFit>
+          {value}
+        </Text>
+        <Text style={[Type.caption, { color: 'rgba(255,255,255,0.8)' }]} numberOfLines={1}>
+          {label}
+        </Text>
+      </View>
+    );
+  }
+  const c = color ?? p.textSecondary;
   return (
-    <View style={[styles.stat, { backgroundColor: p.background, borderColor: p.border }]}>
-      {icon ? <MaterialCommunityIcons name={icon} size={18} color={color ?? p.textSecondary} /> : null}
-      <Text style={{ color: p.textSecondary, fontSize: 12 }}>{label}</Text>
-      <Text style={{ color: color ?? p.text, fontSize: 18, fontWeight: '800' }} numberOfLines={1} adjustsFontSizeToFit>
+    <View style={[styles.stat, { backgroundColor: p.backgroundSelected }]}>
+      {icon ? (
+        <View style={[styles.statIcon, { backgroundColor: alpha(c, p.dark ? 0.2 : 0.14) }]}>
+          <MaterialCommunityIcons name={icon} size={16} color={c} />
+        </View>
+      ) : null}
+      <Text style={[Type.h2, { color: color ?? p.text }]} numberOfLines={1} adjustsFontSizeToFit>
         {value}
+      </Text>
+      <Text style={[Type.caption, { color: p.textSecondary }]} numberOfLines={1}>
+        {label}
       </Text>
     </View>
   );
@@ -577,7 +609,9 @@ const styles = StyleSheet.create({
   segIndicator: { position: 'absolute', top: 4, bottom: 4, left: 4, borderRadius: Radius.sm + 1 },
   segItem: { flex: 1, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
   badge: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: Radius.pill, paddingVertical: 4, paddingHorizontal: 10 },
-  stat: { flex: 1, borderRadius: 16, padding: Spacing.three, gap: 2, borderWidth: StyleSheet.hairlineWidth },
+  stat: { flex: 1, borderRadius: Radius.md + 2, padding: Spacing.three - 2, gap: 4 },
+  statHero: { backgroundColor: 'rgba(255,255,255,0.16)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)' },
+  statIcon: { width: 28, height: 28, borderRadius: 9, alignItems: 'center', justifyContent: 'center', marginBottom: 2 },
   item: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.two },
   itemIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   empty: { alignItems: 'center', gap: Spacing.two + 4, paddingVertical: Spacing.four },
