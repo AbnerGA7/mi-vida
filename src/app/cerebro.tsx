@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, View } from 'react-native';
 
 import { Badge, Body, Button, Card, Empty, Input, ListItem, MicButton, Muted, Row, Screen, useModule, usePalette, type IconName } from '@/components/ui/kit';
+import { prewarmLocal } from '@/lib/ai';
 import { speak, stopSpeaking, useDictation } from '@/lib/voice';
 import { daysUntil } from '@/lib/brain/dates';
 import {
@@ -64,6 +65,8 @@ export default function CerebroScreen() {
   useFocusEffect(
     useCallback(() => {
       cargar();
+      // Cargo la IA local mientras miro la pantalla: así la primera pregunta no espera.
+      prewarmLocal();
     }, [cargar]),
   );
 
