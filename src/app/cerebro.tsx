@@ -1,18 +1,21 @@
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, View } from 'react-native';
 
-import { Badge, Body, Button, Card, Divider, Empty, Icon, Input, ListItem, MicButton, Muted, Overline, Row, Screen, Stat, useModule, usePalette, type IconName } from '@/components/ui/kit';
+import { Badge, Body, Button, Card, Divider, Empty, Icon, Input, ListItem, MicButton, Muted, Notice, Overline, Row, Screen, Stat, StreamingText, useModule, usePalette, type IconName } from '@/components/ui/kit';
 import { Spacing } from '@/constants/theme';
-import { prewarmLocal } from '@/lib/ai';
+import { useLoader } from '@/hooks/use-loader';
+import { AiCancelled, friendlyError, prewarmLocal, type AiSource } from '@/lib/ai';
+import { emitDataChanged } from '@/lib/events';
 import { speak, stopSpeaking, useDictation } from '@/lib/voice';
 import { daysUntil, formatFecha } from '@/lib/brain/dates';
 import { scheduleExpiryReminders } from '@/lib/brain/expiry-notifications';
 import {
+  classifyWithAi,
   extractFromStored,
   mimeFromPath,
   pickFile,
-  processFile,
+  processFileFast,
   scanWithCamera,
   type AskCloud,
   type PickedFile,
@@ -23,6 +26,7 @@ import {
   listDocuments,
   saveDocument,
   updateDocumentContent,
+  updateDocumentMeta,
   type Answer,
   type Documento,
 } from '@/lib/brain/repository';
@@ -61,21 +65,41 @@ export default function CerebroScreen() {
   const [pregunta, setPregunta] = useState('');
   const [pensando, setPensando] = useState(false);
   const [respuesta, setRespuesta] = useState<Answer | null>(null);
+  const [stream, setStream] = useState<{ texto: string; source: AiSource } | null>(null);
+  const [clasificando, setClasificando] = useState<Set<number>>(new Set());
+  const abortRef = useRef<AbortController | null>(null);
 
-  const cargar = useCallback(async () => {
+  const { error, reload: cargar } = useLoader(async () => {
     const lista = await listDocuments();
     setDocs(lista);
     // Cada vez que cambian mis documentos actualizo los avisos de vencimiento.
     scheduleExpiryReminders(lista).catch(() => {});
-  }, []);
+  }, ['documentos']);
 
   useFocusEffect(
     useCallback(() => {
-      cargar();
       // Cargo la IA local mientras miro la pantalla: así la primera pregunta no espera.
       prewarmLocal();
-    }, [cargar]),
+    }, []),
   );
+
+  // La IA mejora categoría y resumen en segundo plano; la lista ya muestra el documento.
+  async function mejorarConIa(id: number, nombre: string, texto: string) {
+    setClasificando((prev) => new Set(prev).add(id));
+    try {
+      const { categoria, resumen } = await classifyWithAi(nombre, texto);
+      await updateDocumentMeta(id, categoria, resumen);
+      emitDataChanged('documentos');
+    } catch {
+      // sin IA disponible: queda la categoría por palabras clave
+    } finally {
+      setClasificando((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }
+  }
 
   function vencimiento(fecha: string | null) {
     if (!fecha) return null;
@@ -100,10 +124,13 @@ export default function CerebroScreen() {
         if (!seguir) return;
       }
       setProcesando(true);
-      await saveDocument(await processFile(file, askCloud));
-      await cargar();
+      const doc = await processFileFast(file, askCloud);
+      const id = await saveDocument(doc);
+      emitDataChanged('documentos');
+      setProcesando(false);
+      if (doc.pendienteIa) mejorarConIa(id, doc.nombre, doc.texto);
     } catch (e) {
-      Alert.alert('No pude guardar el documento', e instanceof Error ? e.message : String(e));
+      Alert.alert('No pude guardar el documento', friendlyError(e));
     } finally {
       setProcesando(false);
     }
@@ -116,17 +143,25 @@ export default function CerebroScreen() {
   });
 
   async function preguntar(texto = pregunta, conVoz = false) {
-    if (!texto.trim()) return;
+    if (!texto.trim() || pensando) return;
     setPensando(true);
     stopSpeaking();
+    setRespuesta(null);
+    setStream(null);
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
     try {
-      // Muestro la respuesta mientras la IA la escribe, sin esperar al final.
-      const r = await askDocuments(texto, (parcial) => setRespuesta({ texto: parcial, fuentes: [], source: null }));
+      const r = await askDocuments(texto, {
+        signal: ctrl.signal,
+        onPartial: (t, source) => setStream({ texto: t, source }),
+      });
       setRespuesta(r);
       if (conVoz) speak(r.texto);
     } catch (e) {
-      Alert.alert('No pude responder', e instanceof Error ? e.message : String(e));
+      if (!(e instanceof AiCancelled)) Alert.alert('No pude responder', friendlyError(e));
     } finally {
+      abortRef.current = null;
+      setStream(null);
       setPensando(false);
     }
   }
@@ -136,7 +171,7 @@ export default function CerebroScreen() {
     try {
       const nuevo = await extractFromStored(doc.nombre, doc.ruta, mimeFromPath(doc.ruta), askCloud);
       await updateDocumentContent(doc.id, nuevo);
-      await cargar();
+      emitDataChanged('documentos');
       Alert.alert(
         nuevo.texto.trim() ? 'Documento leído' : 'Sigo sin poder leerlo',
         nuevo.texto.trim()
@@ -144,7 +179,7 @@ export default function CerebroScreen() {
           : 'Prueba escaneándolo con la cámara con buena luz.',
       );
     } catch (e) {
-      Alert.alert('No pude leerlo', e instanceof Error ? e.message : String(e));
+      Alert.alert('No pude leerlo', friendlyError(e));
     } finally {
       setProcesando(false);
     }
@@ -161,7 +196,16 @@ export default function CerebroScreen() {
   function borrar(doc: Documento) {
     Alert.alert('¿Borrar documento?', doc.nombre, [
       { text: 'Cancelar', style: 'cancel' },
-      { text: 'Borrar', style: 'destructive', onPress: () => deleteDocument(doc).then(cargar) },
+      {
+        text: 'Borrar',
+        style: 'destructive',
+        onPress: () => {
+          setDocs((prev) => prev.filter((d) => d.id !== doc.id));
+          deleteDocument(doc)
+            .catch((e) => Alert.alert('No pude borrarlo', friendlyError(e)))
+            .finally(cargar);
+        },
+      },
     ]);
   }
 
@@ -182,6 +226,7 @@ export default function CerebroScreen() {
           <Stat tone="hero" label="Categorías" value={String(categorias)} icon="shape-outline" />
         </Row>
       }>
+      {error ? <Notice tone="danger" text={`No pude cargar tus documentos: ${error}`} actionLabel="Reintentar" onAction={cargar} /> : null}
       <Card title="Pregúntame" subtitle="Respondo citando el documento" icon="chat-question-outline" accent={m.solid}>
         <Row>
           <View style={{ flex: 1 }}>
@@ -197,7 +242,23 @@ export default function CerebroScreen() {
           </View>
           <MicButton escuchando={escuchando} color={m.solid} onPress={escuchando ? parar : empezar} />
         </Row>
-        <Button label="Preguntar" icon="send" color={m.solid} loading={pensando} onPress={() => preguntar()} />
+        {pensando ? (
+          <Button label="Detener" icon="stop" variant="danger" onPress={() => abortRef.current?.abort()} />
+        ) : (
+          <Button label="Preguntar" icon="send" color={m.solid} onPress={() => preguntar()} />
+        )}
+        {pensando ? (
+          <Card style={{ backgroundColor: m.soft, borderColor: 'transparent' }}>
+            {stream?.texto ? (
+              <StreamingText text={stream.texto} color={m.solid} />
+            ) : (
+              <Row>
+                <ActivityIndicator color={m.solid} />
+                <Muted>{stream?.source === 'local' ? 'Buscando y pensando en el celular…' : 'Buscando en tus documentos…'}</Muted>
+              </Row>
+            )}
+          </Card>
+        ) : null}
         {respuesta ? (
           <Card variant="tinted" accent={m.solid}>
             <Row gap={6}>
@@ -215,10 +276,14 @@ export default function CerebroScreen() {
                 ))}
               </View>
             ) : null}
-            {respuesta.source === 'reglas' ? (
-              <Muted size={12}>Respondido al instante con tus datos guardados</Muted>
-            ) : respuesta.source ? (
-              <Muted size={12}>Respondido con IA {respuesta.source}</Muted>
+            {respuesta.source ? (
+              <Muted size={12}>
+                {respuesta.source === 'local'
+                  ? 'Respondido en el celular'
+                  : respuesta.source === 'nube'
+                    ? 'Respondido con la nube'
+                    : 'Respondido al instante con tus datos guardados'}
+              </Muted>
             ) : null}
             <Row>
               <Button label="Escuchar" icon="volume-high" variant="secondary" size="sm" onPress={() => speak(respuesta.texto)} />
@@ -269,7 +334,9 @@ export default function CerebroScreen() {
                   title={d.nombre}
                   subtitle={`${d.categoria}${d.resumen && d.resumen !== d.nombre ? ` · ${d.resumen}` : ''}`}
                   right={
-                    v ? (
+                    clasificando.has(d.id) ? (
+                      <ActivityIndicator size="small" color={m.solid} />
+                    ) : v ? (
                       <Badge label={v.texto.replace('Vence el ', '')} color={v.color} />
                     ) : !d.texto?.trim() ? (
                       <Badge label="Sin leer" color={p.warning} />

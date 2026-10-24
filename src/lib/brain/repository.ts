@@ -1,6 +1,6 @@
 import * as FileSystem from 'expo-file-system/legacy';
 
-import { askAi, type AiSource } from '@/lib/ai';
+import { askAi, type AiOptions, type AiSource } from '@/lib/ai';
 import { docsDeTipo, fastAnswer, pasajes, toFtsQuery } from '@/lib/brain/answer';
 import { tipoDesdePregunta } from '@/lib/brain/classify';
 import { formatFecha } from '@/lib/brain/dates';
@@ -11,7 +11,7 @@ export type Documento = ExtractedDocument & { id: number; created_at: string };
 
 export async function saveDocument(doc: ExtractedDocument) {
   const db = await getDb();
-  await db.runAsync(
+  const r = await db.runAsync(
     'INSERT INTO documents (nombre, categoria, ruta, texto, resumen, fecha_vencimiento) VALUES (?, ?, ?, ?, ?, ?)',
     doc.nombre,
     doc.categoria,
@@ -20,6 +20,13 @@ export async function saveDocument(doc: ExtractedDocument) {
     doc.resumen,
     doc.fecha_vencimiento,
   );
+  return r.lastInsertRowId;
+}
+
+// La IA mejoró la categoría y el resumen en segundo plano.
+export async function updateDocumentMeta(id: number, categoria: string, resumen: string) {
+  const db = await getDb();
+  await db.runAsync('UPDATE documents SET categoria = ?, resumen = ? WHERE id = ?', categoria, resumen, id);
 }
 
 // Guardo lo que salió de volver a leer un documento (el trigger actualiza la búsqueda FTS).
@@ -79,7 +86,10 @@ export type Answer = { texto: string; fuentes: Documento[]; source: AiSource | '
 
 // 1) Preguntas de siempre (vencimientos, qué tengo) → respuesta en código, al instante.
 // 2) Lo demás → busco los documentos y le paso a la IA local solo los trozos relevantes.
-export async function askDocuments(pregunta: string, onToken?: (parcial: string) => void): Promise<Answer> {
+export async function askDocuments(
+  pregunta: string,
+  opts: Pick<AiOptions, 'onPartial' | 'signal'> = {},
+): Promise<Answer> {
   const todos = await listDocuments();
   const rapida = fastAnswer(pregunta, todos, new Date());
   if (rapida) return { texto: rapida.texto, fuentes: rapida.fuentes, source: 'reglas' };
@@ -93,6 +103,7 @@ export async function askDocuments(pregunta: string, onToken?: (parcial: string)
   if (fuentes.length === 0) {
     return { texto: 'No lo encuentro en tus documentos. Sube o escanea el documento relacionado.', fuentes, source: null };
   }
+
   if (fuentes.every((d) => !d.texto?.trim())) {
     return {
       texto: 'Encontré el documento, pero todavía no tengo su texto. Tócalo y elige "Volver a leer".',
@@ -112,7 +123,7 @@ export async function askDocuments(pregunta: string, onToken?: (parcial: string)
       { role: 'system', content: SYSTEM },
       { role: 'user', content: `Hoy es ${formatFecha(today())}.\n\nFragmentos:\n${contexto}\n\nPregunta: ${pregunta}` },
     ],
-    { privado: true, maxTokens: 160, temperature: 0.1, onToken },
+    { privado: true, maxTokens: 160, temperature: 0.1, ...opts },
   );
   return { texto: text, fuentes, source };
 }

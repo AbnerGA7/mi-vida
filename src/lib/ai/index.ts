@@ -1,37 +1,83 @@
-import NetInfo from '@react-native-community/netinfo';
-
 import { completeCloud, hasCloudKey } from '@/lib/ai/cloud';
 import { completeLocal, isLocalModelReady } from '@/lib/ai/local';
-import type { AiOptions, AiSource, ChatMessage } from '@/lib/ai/types';
+import { isOnline } from '@/lib/ai/net';
+import { getAiPrefs } from '@/lib/ai/prefs';
+import { AiCancelled, type AiOptions, type AiSource, type ChatMessage } from '@/lib/ai/types';
 
-export { prewarmLocal } from '@/lib/ai/local';
-export type { AiSource, ChatMessage } from '@/lib/ai/types';
+export { AiCancelled } from '@/lib/ai/types';
+export { prewarmLocal, warmUpLocal } from '@/lib/ai/local';
+export type { AiOptions, AiSource, ChatMessage } from '@/lib/ai/types';
 
-// Modo híbrido: nube si hay internet y el dato no es privado; si no, IA local.
-// Si la nube falla (sin cuota, sin señal), caigo a la local sin que el usuario lo note.
-export async function askAi(
-  messages: ChatMessage[],
-  options: AiOptions = {},
-): Promise<{ text: string; source: AiSource }> {
-  // Lo privado ni siquiera consulta la red: va directo a la local y me ahorro esa espera.
-  const net = options.privado || !hasCloudKey() ? null : await NetInfo.fetch();
-  const online = Boolean(net?.isConnected && net.isInternetReachable !== false);
+export type AiRoute = { source: AiSource; motivo: string } | { source: null; motivo: string };
 
-  if (online) {
+// Decide dónde respondo sin generar nada (sirve para mostrar "IA nube/local" antes de empezar).
+export async function planRoute(privado = false): Promise<AiRoute> {
+  const [online, prefs, localReady] = await Promise.all([isOnline(), getAiPrefs(), isLocalModelReady()]);
+  const nubePermitida = !privado || !prefs.privacidadEstricta;
+  if (online && nubePermitida && hasCloudKey()) return { source: 'nube', motivo: 'rápida en la nube' };
+  if (localReady) {
+    return { source: 'local', motivo: !online ? 'sin internet' : privado ? 'dato privado' : 'sin clave de nube' };
+  }
+  if (!online) return { source: null, motivo: 'Sin internet y sin IA local. Descárgala en Ajustes.' };
+  if (!hasCloudKey()) return { source: null, motivo: 'Falta la clave de Gemini en el .env y no hay IA local.' };
+  return { source: null, motivo: 'Este dato es privado: descarga la IA local en Ajustes o desactiva la privacidad estricta.' };
+}
+
+// Modo híbrido:
+// 1. Nube si hay internet y (el dato no es privado o la privacidad estricta está apagada).
+// 2. Si la nube falla o tarda, caigo a la local sin que tenga que hacer nada.
+export async function askAi(messages: ChatMessage[], opts: AiOptions = {}): Promise<{ text: string; source: AiSource }> {
+  const { privado = false, maxTokens, rapido, json, jsonSchema, temperature, onPartial, signal } = opts;
+  const route = await planRoute(privado);
+  if (signal?.aborted) throw new AiCancelled();
+
+  if (route.source === 'nube') {
     try {
-      return { text: await completeCloud(messages, options), source: 'nube' };
-    } catch {
+      const text = await completeCloud(messages, {
+        maxTokens,
+        rapido,
+        json,
+        temperature,
+        signal,
+        onPartial: onPartial && ((t) => onPartial(t, 'nube')),
+      });
+      if (text) return { text, source: 'nube' };
+    } catch (e) {
+      if (e instanceof AiCancelled) throw e;
       // sigo con la local
     }
   }
 
   if (!(await isLocalModelReady())) {
-    throw new Error('Descarga la IA local en Ajustes para usarla sin internet.');
+    throw new Error(route.source === null ? route.motivo : 'La nube no respondió y no tienes la IA local. Descárgala en Ajustes.');
   }
-  return { text: await completeLocal(messages, options), source: 'local' };
+  onPartial?.('', 'local');
+  const text = await completeLocal(messages, {
+    maxTokens,
+    temperature,
+    json,
+    jsonSchema,
+    signal,
+    onPartial: onPartial && ((t) => onPartial(t, 'local')),
+  });
+  return { text, source: 'local' };
 }
 
-// Saco el primer objeto JSON de la respuesta (la nube a veces lo envuelve en ```json).
-export function parseJson<T = any>(text: string): T {
-  return JSON.parse(text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1));
+// Saca el primer objeto JSON de una respuesta (los modelos chicos a veces agregan texto alrededor).
+export function parseJsonLoose<T = any>(text: string): T {
+  const cleaned = text.replace(/```(?:json)?/gi, '');
+  const start = cleaned.indexOf('{');
+  const end = cleaned.lastIndexOf('}');
+  if (start < 0 || end <= start) throw new Error('La IA no devolvió JSON');
+  return JSON.parse(cleaned.slice(start, end + 1));
+}
+
+// Alias corto que usa Cerebro.
+export const parseJson = parseJsonLoose;
+
+export function friendlyError(e: unknown) {
+  if (e instanceof AiCancelled) return 'Cancelado';
+  const msg = e instanceof Error ? e.message : String(e);
+  if (/Network request failed|network/i.test(msg)) return 'Sin conexión. Intenta de nuevo o usa la IA local.';
+  return msg;
 }
