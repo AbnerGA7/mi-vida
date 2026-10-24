@@ -471,16 +471,20 @@ export function Divider() {
   return <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: p.border }} />;
 }
 
-export function Empty({ icon, text }: { icon: IconName; text: string }) {
+export function Empty({ icon, text, color }: { icon: IconName; text: string; color?: string }) {
   const p = usePalette();
+  const c = color ?? p.textSecondary;
   return (
     <View style={styles.empty}>
-      <MaterialCommunityIcons name={icon} size={32} color={p.textSecondary} />
-      <Text style={{ color: p.textSecondary, textAlign: 'center' }}>{text}</Text>
+      <View style={[styles.emptyIcon, { backgroundColor: alpha(c, p.dark ? 0.16 : 0.1) }]}>
+        <MaterialCommunityIcons name={icon} size={26} color={c} />
+      </View>
+      <Text style={[Type.callout, { color: p.textSecondary, textAlign: 'center', maxWidth: 260 }]}>{text}</Text>
     </View>
   );
 }
 
+// Bloque gris que late mientras algo carga.
 export function Skeleton({ height = 16, width = '100%', radius = Radius.sm }: { height?: number; width?: number | `${number}%`; radius?: number }) {
   const p = usePalette();
   const o = useSharedValue(0.5);
@@ -576,7 +580,8 @@ const styles = StyleSheet.create({
   stat: { flex: 1, borderRadius: 16, padding: Spacing.three, gap: 2, borderWidth: StyleSheet.hairlineWidth },
   item: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.two },
   itemIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  empty: { alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.four },
+  empty: { alignItems: 'center', gap: Spacing.two + 4, paddingVertical: Spacing.four },
+  emptyIcon: { width: 56, height: 56, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
 
   heroRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   cardTitle: { fontSize: 17, fontWeight: '700', flex: 1 },
