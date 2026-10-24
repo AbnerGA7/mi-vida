@@ -186,7 +186,11 @@ export default function CerebroScreen() {
                 <Muted size={12}>{f.nombre}</Muted>
               </Row>
             ))}
-            {respuesta.source ? <Muted size={12}>🔒 Respondido con IA {respuesta.source}</Muted> : null}
+            {respuesta.source === 'reglas' ? (
+              <Muted size={12}>⚡ Respondido al instante con tus datos guardados</Muted>
+            ) : respuesta.source ? (
+              <Muted size={12}>🔒 Respondido con IA {respuesta.source}</Muted>
+            ) : null}
             <Row>
               <Button label="Escuchar" icon="volume-high" variant="ghost" color={m.solid} onPress={() => speak(respuesta.texto)} />
               <Button label="Callar" icon="volume-off" variant="ghost" color={m.solid} onPress={stopSpeaking} />
