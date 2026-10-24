@@ -288,7 +288,7 @@ export function Card({
             </View>
           ) : null}
           <View style={{ flex: 1 }}>
-            <Text style={[Type.title, { color: p.text }]} numberOfLines={1}>
+            <Text style={[Type.title, { color: p.text }]} numberOfLines={1} accessibilityRole="header">
               {title}
             </Text>
             {subtitle ? <Text style={[Type.caption, { color: p.textSecondary }]}>{subtitle}</Text> : null}
