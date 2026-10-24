@@ -266,3 +266,15 @@ export function resumenPorReglas(tipo: string | null, texto: string, nombre: str
   if (f.poliza) partes.push(`póliza ···${f.poliza}`);
   return partes.join(' · ');
 }
+
+// ¿A qué tipo de documento se refiere una pregunta? ("¿cuándo vence mi soat?" → SOAT)
+export function tipoDesdePregunta(pregunta: string) {
+  const q = ` ${normalize(pregunta).replace(/[^a-z0-9 ]/g, ' ')} `;
+  let best: { tipo: string; largo: number } | null = null;
+  for (const t of TIPOS) {
+    for (const a of t.alias) {
+      if (q.includes(` ${a} `) && (!best || a.length > best.largo)) best = { tipo: t.tipo, largo: a.length };
+    }
+  }
+  return best?.tipo ?? null;
+}
