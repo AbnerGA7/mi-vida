@@ -315,6 +315,62 @@ export function Chip({
 }
 
 // Control segmentado con indicador que se desliza.
+export function Segmented<T extends string>({
+  options,
+  value,
+  onChange,
+  color,
+}: {
+  options: { label: string; value: T; icon?: IconName }[];
+  value: T;
+  onChange: (v: T) => void;
+  color?: string;
+}) {
+  const p = usePalette();
+  const [width, setWidth] = useState(0);
+  const index = Math.max(0, options.findIndex((o) => o.value === value));
+  const x = useSharedValue(0);
+  const seg = width ? (width - 8) / options.length : 0;
+
+  useEffect(() => {
+    x.value = withSpring(index * seg, Motion.gentle);
+  }, [index, seg, x]);
+
+  const indicator = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }));
+  const c = color ?? p.primary;
+
+  return (
+    <View style={[styles.segmented, { backgroundColor: p.backgroundSelected }]} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
+      {seg > 0 ? (
+        <Animated.View
+          style={[
+            styles.segIndicator,
+            { width: seg, backgroundColor: p.dark ? alpha(c, 0.22) : p.backgroundElement, boxShadow: p.dark ? undefined : Shadow.light.card },
+            indicator,
+          ]}
+        />
+      ) : null}
+      {options.map((o) => {
+        const sel = o.value === value;
+        return (
+          <Pressable
+            key={o.value}
+            onPress={() => onChange(o.value)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: sel }}
+            style={styles.segItem}>
+            {o.icon ? <MaterialCommunityIcons name={o.icon} size={16} color={sel ? c : p.textSecondary} /> : null}
+            <Text style={[Type.callout, { color: sel ? (p.dark ? '#FFFFFF' : c) : p.textSecondary, fontFamily: sel ? Font.bold : Font.medium }]} numberOfLines={1}>
+              {o.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+// Barra de progreso que se llena con animación.
 export function Progress({ value, color, height = 8, track }: { value: number; color: string; height?: number; track?: string }) {
   const p = usePalette();
   const [w, setW] = useState(0);
@@ -498,6 +554,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderWidth: 1,
   },
+  segmented: { flexDirection: 'row', borderRadius: Radius.md, padding: 4, minHeight: 46 },
+  segIndicator: { position: 'absolute', top: 4, bottom: 4, left: 4, borderRadius: Radius.sm + 1 },
+  segItem: { flex: 1, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
   badge: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: Radius.pill, paddingVertical: 4, paddingHorizontal: 10 },
   stat: { flex: 1, borderRadius: 16, padding: Spacing.three, gap: 2, borderWidth: StyleSheet.hairlineWidth },
   item: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.two },
