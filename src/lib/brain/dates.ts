@@ -15,6 +15,18 @@ function iso(y: number, m: number, d: number) {
   return `${y}-${pad(m)}-${pad(d)}`;
 }
 
+// El OCR confunde letras con números ("2O27", "l5/03"). Arreglo solo dentro de bloques que parecen fechas
+// y normalizo los espacios alrededor de las barras ("15 / 03 / 2027").
+export function cleanOcr(texto: string) {
+  return texto
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[0-9oil|]{1,4}(?:\s?[/.\-]\s?[0-9oil|]{1,4}){2}/g, (m) =>
+      /\d/.test(m) ? m.replace(/\s/g, '').replace(/o/g, '0').replace(/[il|]/g, '1') : m,
+    );
+}
+
 type Found = { fecha: string; index: number };
 
 export function findDates(texto: string): Found[] {
