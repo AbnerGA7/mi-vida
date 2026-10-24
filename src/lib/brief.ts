@@ -78,8 +78,11 @@ export async function buildBrief(eventos: Evento[] = [], correos: Correo[] = [],
 }
 
 // Programo la notificación diaria con el último resumen; se actualiza cada vez que abro la app.
+
 export async function scheduleMorningBrief(brief: Brief) {
-  const perm = await Notifications.requestPermissionsAsync();
+  // Solo pido permiso si todavía no lo tengo (antes lo pedía cada vez que abría Hoy).
+  const actual = await Notifications.getPermissionsAsync();
+  const perm = actual.granted ? actual : await Notifications.requestPermissionsAsync();
   if (!perm.granted) return false;
 
   const content = {

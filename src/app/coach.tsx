@@ -1,10 +1,12 @@
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { Alert, Text, View } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Text, View } from 'react-native';
 
 import { ProgressCard } from '@/components/coach/progress-card';
-import { Badge, Body, Button, Card, Display, Input, ListItem, Muted, Overline, Progress, Row, Screen, Segmented, Skeleton, Stat, useModule, usePalette } from '@/components/ui/kit';
+import { Badge, Body, Button, Card, Chip, Display, Input, ListItem, Muted, Notice, Overline, Progress, Row, Screen, Segmented, Skeleton, Stat, StreamingText, useModule, usePalette } from '@/components/ui/kit';
 import { Spacing, Type } from '@/constants/theme';
+import { useLoader } from '@/hooks/use-loader';
+import { AiCancelled, friendlyError } from '@/lib/ai';
 import type { Log } from '@/lib/coach/adjust';
 import type { Objetivo, Sexo } from '@/lib/coach/nutrition';
 import {
@@ -29,17 +31,12 @@ const num = (s: string) => Number(s.replace(',', '.'));
 export default function CoachScreen() {
   const [profile, setProfile] = useState<Profile | null | undefined>(undefined);
 
-  const cargar = useCallback(async () => {
+  const { error, reload: cargar } = useLoader(async () => {
     const perfil = await getProfile();
     setProfile(perfil);
     // Con un plan armado, me recuerda cada domingo hacer el registro semanal.
     if (perfil) scheduleWeeklyCheckinReminder().catch(() => {});
-  }, []);
-  useFocusEffect(
-    useCallback(() => {
-      cargar();
-    }, [cargar]),
-  );
+  }, ['coach']);
 
   const subtitle = profile
     ? { grasa: 'Objetivo: bajar grasa', masa: 'Objetivo: ganar masa', mantener: 'Objetivo: mantener' }[profile.objetivo]
@@ -72,7 +69,8 @@ export default function CoachScreen() {
           </View>
         ) : undefined
       }>
-      {profile === undefined && (
+      {error ? <Notice tone="danger" text={`No pude cargar tu plan: ${error}`} actionLabel="Reintentar" onAction={cargar} /> : null}
+      {profile === undefined && !error && (
         <Card>
           <Skeleton height={20} width="50%" />
           <Skeleton height={52} />
@@ -98,8 +96,12 @@ function Onboarding({ onSaved }: { onSaved: () => void }) {
       Alert.alert('Faltan datos', 'Completa edad, estatura, peso y días por semana.');
       return;
     }
-    await saveProfile({ ...datos, sexo, objetivo, lesiones: f.lesiones, alimentos_excluidos: f.excluidos });
-    onSaved();
+    try {
+      await saveProfile({ ...datos, sexo, objetivo, lesiones: f.lesiones, alimentos_excluidos: f.excluidos });
+      onSaved();
+    } catch (e) {
+      Alert.alert('No pude guardar tu perfil', friendlyError(e));
+    }
   }
 
   return (
@@ -157,26 +159,29 @@ function Plan({ profile, onChanged }: { profile: Profile; onChanged: () => void 
   const [ajustes, setAjustes] = useState<{ fecha: string; detalle: string }[]>([]);
   const [menu, setMenu] = useState<string | null>(null);
   const [generando, setGenerando] = useState(false);
+  const [parcial, setParcial] = useState('');
+  const abortRef = useRef<AbortController | null>(null);
 
-  const cargar = useCallback(async () => {
+  const { reload: cargar } = useLoader(async () => {
     const [s, a, mn] = await Promise.all([setsToday(today()), listAdjustments(), lastMenu()]);
     setHechas(s);
     setAjustes(a);
     setMenu(mn);
-  }, []);
-  useFocusEffect(
-    useCallback(() => {
-      cargar();
-    }, [cargar]),
-  );
+  });
 
   async function nuevoMenu() {
+    if (generando) return;
     setGenerando(true);
+    setParcial('');
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
     try {
-      setMenu(await generateMenu(profile));
+      setMenu(await generateMenu(profile, { signal: ctrl.signal, onPartial: (t) => setParcial(t) }));
     } catch (e) {
-      Alert.alert('No pude armar el menú', e instanceof Error ? e.message : String(e));
+      if (!(e instanceof AiCancelled)) Alert.alert('No pude armar el menú', friendlyError(e));
     } finally {
+      abortRef.current = null;
+      setParcial('');
       setGenerando(false);
     }
   }
@@ -216,15 +221,31 @@ function Plan({ profile, onChanged }: { profile: Profile; onChanged: () => void 
       )}
 
       <Card title="Menú del día" subtitle="Peruano, con tus macros" icon="silverware-fork-knife" accent={p.warning}>
-        {menu ? <Body>{menu}</Body> : <Muted>Te armo un menú peruano con tus macros y lo que no comes.</Muted>}
-        <Button
-          label={menu ? 'Otro menú' : 'Armar mi menú'}
-          icon="chef-hat"
-          variant={menu ? 'secondary' : 'primary'}
-          color={p.warning}
-          loading={generando}
-          onPress={nuevoMenu}
-        />
+        {generando ? (
+          parcial ? (
+            <StreamingText text={parcial} color={p.warning} />
+          ) : (
+            <Row>
+              <ActivityIndicator color={p.warning} />
+              <Muted>Armando tu menú…</Muted>
+            </Row>
+          )
+        ) : menu ? (
+          <Body>{menu}</Body>
+        ) : (
+          <Muted>Te armo un menú peruano con tus macros y lo que no comes.</Muted>
+        )}
+        {generando ? (
+          <Button label="Detener" icon="stop" variant="danger" onPress={() => abortRef.current?.abort()} />
+        ) : (
+          <Button
+            label={menu ? 'Otro menú' : 'Armar mi menú'}
+            icon="chef-hat"
+            variant={menu ? 'secondary' : 'primary'}
+            color={p.warning}
+            onPress={nuevoMenu}
+          />
+        )}
       </Card>
     </>
   );
@@ -239,15 +260,24 @@ function ExerciseRow({ ej, hechas, onLogged }: { ej: Ejercicio; hechas: number; 
 
   useFocusEffect(
     useCallback(() => {
-      lastSetFor(ej.nombre).then(setAnterior);
+      lastSetFor(ej.nombre)
+        .then(setAnterior)
+        .catch(() => {});
     }, [ej.nombre]),
   );
 
   async function guardar() {
-    if (!(num(peso) >= 0) || !(num(reps) > 0)) return;
-    await logSet({ fecha: today(), ejercicio: ej.nombre, serie: hechas + 1, peso_kg: num(peso), repeticiones: num(reps) });
-    setReps('');
-    onLogged();
+    if (!(num(peso) >= 0) || !(num(reps) > 0)) {
+      Alert.alert('Faltan datos', 'Pon el peso (kg) y las repeticiones.');
+      return;
+    }
+    try {
+      await logSet({ fecha: today(), ejercicio: ej.nombre, serie: hechas + 1, peso_kg: num(peso), repeticiones: num(reps) });
+      setReps('');
+      onLogged();
+    } catch (e) {
+      Alert.alert('No pude guardar la serie', friendlyError(e));
+    }
   }
 
   const completo = hechas >= ej.series;
@@ -282,13 +312,19 @@ function WeeklyCheckin({ onSaved }: { onSaved: () => void }) {
   const set = (k: keyof typeof f) => (v: string) => setF((prev) => ({ ...prev, [k]: v }));
 
   async function guardar() {
-    const ajustes = await saveCheckin({
-      semana: isoWeek(),
-      peso_promedio: f.peso ? num(f.peso) : null,
-      energia: f.energia ? num(f.energia) : null,
-      sueno: f.sueno ? num(f.sueno) : null,
-      notas: f.notas,
-    });
+    let ajustes;
+    try {
+      ajustes = await saveCheckin({
+        semana: isoWeek(),
+        peso_promedio: f.peso ? num(f.peso) : null,
+        energia: f.energia ? num(f.energia) : null,
+        sueno: f.sueno ? num(f.sueno) : null,
+        notas: f.notas,
+      });
+    } catch (e) {
+      Alert.alert('No pude guardar el registro', friendlyError(e));
+      return;
+    }
     Alert.alert(
       'Registro guardado',
       ajustes.length ? ajustes.map((a) => `• ${a.detalle}`).join('\n') : 'Vas bien: no hace falta cambiar nada.',

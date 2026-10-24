@@ -2,11 +2,13 @@ import * as Notifications from 'expo-notifications';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Image } from 'expo-image';
-import { RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { Alert, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 import { AssistantCard } from '@/components/assistant/assistant-card';
-import { alpha, Badge, Body, Button, Card, Divider, Empty, Input, ListItem, Muted, Row, Screen, Stat, useModule, usePalette } from '@/components/ui/kit';
+import { alpha, Badge, Body, Button, Card, Divider, Empty, Input, ListItem, Muted, Notice, Row, Screen, Stat, useModule, usePalette } from '@/components/ui/kit';
 import { Font, Spacing, Type } from '@/constants/theme';
+import { useLoader } from '@/hooks/use-loader';
+import { friendlyError } from '@/lib/ai';
 import { useGoogleAuthRequest } from '@/lib/auth/google';
 import { scheduleExpiryReminders } from '@/lib/brain/expiry-notifications';
 import { listDocuments } from '@/lib/brain/repository';
@@ -46,7 +48,6 @@ export default function HoyScreen() {
   const [tareas, setTareas] = useState<Tarea[]>([]);
   const [brief, setBrief] = useState<Brief | null>(null);
   const [googleError, setGoogleError] = useState<string | null>(null);
-  const [cargando, setCargando] = useState(false);
   const [nueva, setNueva] = useState('');
 
   // El token de Google dura ~1 hora: si venció, reconecto desde aquí.
@@ -79,37 +80,70 @@ export default function HoyScreen() {
     [accessToken],
   );
 
-  const cargar = useCallback(
-    async (forzar = false) => {
-      setCargando(true);
-      try {
-        const [{ ev, co }, t] = await Promise.all([cargarGoogle(forzar), upcomingTasks()]);
-        const b = await buildBrief(ev, co, t);
-        setEventos(ev);
-        setCorreos(co);
-        setTareas(t);
-        setBrief(b);
-        await scheduleMorningBrief(b);
-        // La app abre en Hoy: aquí también dejo al día los avisos de vencimiento.
-        listDocuments().then(scheduleExpiryReminders).catch(() => {});
-      } finally {
-        setCargando(false);
-      }
-    },
-    [cargarGoogle],
-  );
+  const cargarGoogleRef = useRef(cargarGoogle);
+  useEffect(() => {
+    cargarGoogleRef.current = cargarGoogle;
+  }, [cargarGoogle]);
 
-  useFocusEffect(
-    useCallback(() => {
-      cargar();
-    }, [cargar]),
-  );
+  // Deslizar hacia abajo o reconectar Google pide datos nuevos; lo demás reusa la caché.
+  const forzar = useRef(false);
+  const { loading: cargando, error, reload: cargar } = useLoader(async () => {
+    const f = forzar.current;
+    forzar.current = false;
+    const [{ ev, co }, t] = await Promise.all([cargarGoogleRef.current(f), upcomingTasks()]);
+    const b = await buildBrief(ev, co, t);
+    setEventos(ev);
+    setCorreos(co);
+    setTareas(t);
+    setBrief(b);
+    // La notificación se programa en segundo plano: nunca bloquea la pantalla.
+    scheduleMorningBrief(b).catch(() => {});
+    // La app abre en Hoy: aquí también dejo al día los avisos de vencimiento.
+    listDocuments().then(scheduleExpiryReminders).catch(() => {});
+  }, ['tareas', 'finanzas', 'documentos', 'coach']);
+
+  // Al reconectar Google recargo para traer agenda y correos.
+  const [tokenAnterior, setTokenAnterior] = useState(accessToken);
+  useEffect(() => {
+    if (accessToken !== tokenAnterior) {
+      setTokenAnterior(accessToken);
+      if (accessToken) {
+        forzar.current = true;
+        cargar();
+      }
+    }
+  }, [accessToken, tokenAnterior, cargar]);
 
   async function agregarTarea() {
-    if (!nueva.trim()) return;
-    await addTask(nueva);
+    const texto = nueva.trim();
+    if (!texto) return;
     setNueva('');
-    cargar();
+    try {
+      await addTask(texto);
+    } catch (e) {
+      setNueva(texto);
+      Alert.alert('No pude crear la tarea', friendlyError(e));
+    }
+  }
+
+  // Completar/borrar se ve al toque; si la base falla, recargo para volver al estado real.
+  function completar(t: Tarea) {
+    setTareas((prev) => prev.filter((x) => x.id !== t.id));
+    toggleTask(t.id).catch(() => cargar());
+  }
+
+  function borrarTarea(t: Tarea) {
+    Alert.alert('¿Borrar tarea?', t.titulo, [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Borrar',
+        style: 'destructive',
+        onPress: () => {
+          setTareas((prev) => prev.filter((x) => x.id !== t.id));
+          deleteTask(t.id).catch(() => cargar());
+        },
+      },
+    ]);
   }
 
   const nombre = user?.name?.split(' ')[0];
@@ -125,7 +159,15 @@ export default function HoyScreen() {
       title={`${saludo()}${nombre ? `, ${nombre}` : ''}`}
       subtitle={brief?.titular}
       right={user?.picture ? <Image source={{ uri: user.picture }} style={styles.avatar} /> : undefined}
-      refreshControl={<RefreshControl refreshing={cargando} onRefresh={() => cargar(true)} />}
+      refreshControl={
+        <RefreshControl
+          refreshing={cargando}
+          onRefresh={() => {
+            forzar.current = true;
+            cargar();
+          }}
+        />
+      }
       hero={
         <Row gap={10}>
           <Stat tone="hero" label="Tareas hoy" value={String(paraHoy)} icon="checkbox-marked-circle-outline" />
@@ -133,6 +175,7 @@ export default function HoyScreen() {
           <Stat tone="hero" label="Correos" value={String(correos.length)} icon="email-outline" />
         </Row>
       }>
+      {error ? <Notice tone="danger" text={`No pude cargar tu día: ${error}`} actionLabel="Reintentar" onAction={cargar} /> : null}
       {(!accessToken || googleError) && (
         <Card title="Conecta Google" subtitle="Agenda y correos en solo lectura" icon="google" accent={p.primary} variant="tinted">
           <Muted>{googleError ?? 'Conecta tu cuenta para ver tu agenda y tus correos importantes.'}</Muted>
@@ -193,13 +236,13 @@ export default function HoyScreen() {
                 title={t.titulo}
                 subtitle={t.fecha_limite ?? undefined}
                 right={<Badge label={bucket} color={BUCKET[bucket]} />}
-                onPress={() => toggleTask(t.id).then(() => cargar())}
-                onLongPress={() => deleteTask(t.id).then(() => cargar())}
+                onPress={() => completar(t)}
+                onLongPress={() => borrarTarea(t)}
               />
             );
           })
         )}
-        <Muted size={12}>Toca para completar · mantén presionado para borrar</Muted>
+        <Muted size={12}>Toca para completar · mantén presionado para borrar · o pídeselo al asistente ✨</Muted>
       </Card>
 
       {correos.length > 0 && (
@@ -221,8 +264,13 @@ export default function HoyScreen() {
               <Body style={{ flex: 1 }}>{l}</Body>
             </Row>
           ))}
-          <Muted size={12}>Se actualiza cada vez que abres la app.</Muted>
-          <Button label="Enviarme el resumen ahora" icon="bell-ring-outline" variant="secondary" onPress={() => sendBriefNow(brief)} />
+          <Muted size={12}>Te llega cada día a las {BRIEF_HOUR}:00 y se actualiza cada vez que abres la app.</Muted>
+          <Button
+            label="Enviarme el resumen ahora"
+            icon="bell-ring-outline"
+            variant="secondary"
+            onPress={() => sendBriefNow(brief).catch((e) => Alert.alert('No pude enviar la notificación', friendlyError(e)))}
+          />
         </Card>
       )}
     </Screen>
