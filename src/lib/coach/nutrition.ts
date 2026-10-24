@@ -52,3 +52,16 @@ export function computeTargets(p: ProfileInput): Targets {
 
   return { bmr: Math.round(base), tdee: Math.round(tdee), calorias, proteina_g, grasa_g, carbohidratos_g };
 }
+
+// Reviso que mis datos tengan sentido antes de calcular: "1.75" de estatura daría calorías absurdas.
+export function profileProblem(d: { edad: number; estatura_cm: number; peso_kg: number; dias_por_semana: number }): string | null {
+  if ([d.edad, d.estatura_cm, d.peso_kg, d.dias_por_semana].some((v) => !Number.isFinite(v) || v <= 0)) {
+    return 'Completa edad, estatura, peso y días por semana.';
+  }
+  if (d.estatura_cm < 3) return 'Escribe la estatura en centímetros (ej. 175), no en metros.';
+  if (d.edad < 14 || d.edad > 90) return 'La edad debe estar entre 14 y 90 años.';
+  if (d.estatura_cm < 120 || d.estatura_cm > 230) return 'La estatura debe estar entre 120 y 230 cm.';
+  if (d.peso_kg < 30 || d.peso_kg > 250) return 'El peso debe estar entre 30 y 250 kg.';
+  if (!Number.isInteger(d.dias_por_semana) || d.dias_por_semana > 7) return 'Los días por semana van de 1 a 7.';
+  return null;
+}
