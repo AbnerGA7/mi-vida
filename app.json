@@ -58,6 +58,7 @@
         }
       ],
       "expo-notifications",
+      "expo-background-task",
       "expo-speech-recognition",
       [
         "expo-build-properties",
