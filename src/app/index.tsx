@@ -196,9 +196,12 @@ export default function HoyScreen() {
       </Card>
 
       {correos.length > 0 && (
-        <Card title="Para responder" icon="email-alert-outline" accent={p.danger}>
-          {correos.map((c) => (
-            <ListItem key={c.id} icon="account-circle-outline" iconColor={p.textSecondary} title={c.asunto} subtitle={`${c.de} · ${c.fragmento}`} />
+        <Card title="Para responder" subtitle="Importantes sin leer · 48 h" icon="email-alert-outline" accent={p.danger}>
+          {correos.map((c, i) => (
+            <View key={c.id} style={{ gap: Spacing.two }}>
+              {i > 0 ? <Divider /> : null}
+              <ListItem icon="account-circle-outline" iconColor={p.textSecondary} title={c.asunto} subtitle={`${c.de} · ${c.fragmento}`} />
+            </View>
           ))}
         </Card>
       )}
