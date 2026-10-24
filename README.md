@@ -25,7 +25,8 @@ Mi app personal para ordenar mi vida desde el celular: **mi plata, mi cuerpo, mi
 - **Tareas en una línea** con fechas en lenguaje natural, entendidas en código: "pagar luz el viernes!" crea la tarea para el próximo viernes con prioridad alta. También entiende "hoy", "mañana", "pasado mañana" y "15/03".
 - **Resumen matutino:** junta mi agenda, tareas, presupuestos en riesgo, pagos fijos de los próximos 3 días, documentos por vencer y el gym de hoy. Llega como **notificación a las 7:00**.
   - Solo se reprograma si el texto cambió (guardo la huella SHA-256), y Google se reusa por 5 minutos al cambiar de pestaña; deslizar hacia abajo siempre recarga.
-  - El texto se arma en el celular y se actualiza cada vez que abro la app, así que muestra los datos de la última vez que la abrí.
+  - El texto se arma en el celular cada vez que abro la app y **también en segundo plano**: una tarea de Android (`expo-background-task`) despierta la app cada ~2 horas y, si el último resumen es de otro día o estoy de madrugada, lo vuelve a armar. Así la notificación de las 7:00 trae las tareas de ese día aunque no haya abierto la app desde la noche anterior.
+  - En segundo plano solo uso mis datos locales; si el token de Google sigue vivo también sumo la agenda y los correos.
   - El token de Google dura ~1 hora: si venció, el panel me pide reconectar con un botón.
 
 ## 💰 Asesor financiero
@@ -175,5 +176,5 @@ plugins/
 - [x] Coach v1 (macros, rutina, series, registro semanal y menú)
 - [x] Coach v2 (gráficas de progreso y recordatorio semanal)
 - [x] Panel de vida v1 (agenda, correos, tareas y resumen a las 7 am)
-- [ ] Resumen que se recalcula en segundo plano antes de las 7 am
+- [x] Resumen que se recalcula en segundo plano antes de las 7 am
 - [x] Asistente central: un chat que consulta los 4 módulos
