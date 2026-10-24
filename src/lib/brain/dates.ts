@@ -55,3 +55,12 @@ export function daysUntil(fecha: string, today = new Date()) {
   const now = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
   return Math.round((target - now) / 86400000);
 }
+
+const NOMBRES_MES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'setiembre', 'octubre', 'noviembre', 'diciembre'];
+
+// "2027-03-15" → "15 de marzo de 2027" (para mostrar y para leer en voz alta).
+export function formatFecha(fecha: string, conAnio = true) {
+  const [y, m, d] = fecha.split('-').map(Number);
+  if (!y || !m || !d) return fecha;
+  return `${d} de ${NOMBRES_MES[m - 1]}${conAnio ? ` de ${y}` : ''}`;
+}
