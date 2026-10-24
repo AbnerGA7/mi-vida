@@ -106,7 +106,7 @@ export async function askDocuments(pregunta: string): Promise<Answer> {
       { role: 'system', content: SYSTEM },
       { role: 'user', content: `Fragmentos:\n${contexto}\n\nPregunta: ${pregunta}` },
     ],
-    { privado: true, maxTokens: 300 },
+    { privado: true, maxTokens: 300, temperature: 0.1 },
   );
   return { texto: text, fuentes, source };
 }

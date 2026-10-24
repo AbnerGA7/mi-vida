@@ -4,6 +4,7 @@ import { ActivityIndicator, Alert, View } from 'react-native';
 
 import { Badge, Body, Button, Card, Empty, Input, ListItem, MicButton, Muted, Row, Screen, useModule, usePalette, type IconName } from '@/components/ui/kit';
 import { speak, stopSpeaking, useDictation } from '@/lib/voice';
+import { preloadLocalModel } from '@/lib/ai/local';
 import { daysUntil } from '@/lib/brain/dates';
 import {
   extractFromStored,
@@ -64,6 +65,8 @@ export default function CerebroScreen() {
   useFocusEffect(
     useCallback(() => {
       cargar();
+      // Aquí casi todo pasa por la IA local: la dejo cargando mientras miro mis documentos.
+      preloadLocalModel();
     }, [cargar]),
   );
 

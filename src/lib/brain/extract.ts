@@ -5,7 +5,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
 import PdfThumbnail from 'react-native-pdf-thumbnail';
 
-import { askAi } from '@/lib/ai';
+import { askAi, parseJson } from '@/lib/ai';
 import { extractPdfTextCloud, hasCloudKey } from '@/lib/ai/cloud';
 import { findExpiration } from '@/lib/brain/dates';
 
@@ -104,6 +104,15 @@ Pistas: SOAT, póliza o seguro → Seguros; tarjeta de propiedad o brevete → V
 resumen: una línea con qué es el documento, de quién y lo más importante (montos, número de póliza solo últimos 4 dígitos).
 No inventes datos que no estén en el texto. No des interpretaciones legales.`;
 
+const SCHEMA = {
+  type: 'object',
+  properties: {
+    categoria: { type: 'string', enum: [...CATEGORIAS_DOC] },
+    resumen: { type: 'string' },
+  },
+  required: ['categoria', 'resumen'],
+};
+
 async function classify(nombre: string, texto: string) {
   if (!texto.trim()) return { categoria: 'Notas personales', resumen: 'Sin texto leído todavía' };
   try {
@@ -113,9 +122,9 @@ async function classify(nombre: string, texto: string) {
         { role: 'system', content: SYSTEM },
         { role: 'user', content: `Nombre: ${nombre}\n\n${texto.slice(0, 3000)}` },
       ],
-      { privado: true, maxTokens: 160 },
+      { privado: true, maxTokens: 160, temperature: 0, json: SCHEMA },
     );
-    const json = JSON.parse(text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1));
+    const json = parseJson(text);
     return {
       categoria: CATEGORIAS_DOC.includes(json.categoria) ? json.categoria : 'Notas personales',
       resumen: String(json.resumen || nombre),
