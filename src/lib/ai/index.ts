@@ -30,3 +30,8 @@ export async function askAi(
   }
   return { text: await completeLocal(messages, options), source: 'local' };
 }
+
+// Saco el primer objeto JSON de la respuesta (la nube a veces lo envuelve en ```json).
+export function parseJson<T = any>(text: string): T {
+  return JSON.parse(text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1));
+}
