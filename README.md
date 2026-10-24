@@ -16,7 +16,7 @@ Mi app personal para ordenar mi vida desde el celular: **mi plata, mi cuerpo, mi
 | 💰 **Asesor financiero** | Registro rápido ("25 menú con yape"), presupuestos con semáforo, metas de ahorro, pagos fijos con aviso y boletas con la cámara | ✅ Listo (v2) |
 | 🧠 **Segundo cerebro** | Escaneo SOAT, DNI, contratos y pólizas (también PDF); le pregunto "¿cuándo vence mi SOAT?" y me avisa antes de que venza | ✅ Listo (v2) |
 | 💪 **Coach** | Calorías y macros, rutina según mis días, registro de series, ajustes por progreso, gráficas y recordatorio semanal | ✅ Listo (v2) |
-| 🏠 **Panel de vida** | Agenda, correos importantes, tareas y resumen cada mañana por notificación | ✅ Listo (v1) |
+| 🏠 **Panel de vida** | Agenda, correos importantes, tareas, asistente que responde de los 4 módulos y resumen cada mañana por notificación | ✅ Listo (v2) |
 
 ## 🏠 Panel de vida (pestaña Hoy)
 
