@@ -3,7 +3,9 @@
 const MESES: Record<string, number> = {
   enero: 1, febrero: 2, marzo: 3, abril: 4, mayo: 5, junio: 6, julio: 7,
   agosto: 8, septiembre: 9, setiembre: 9, octubre: 10, noviembre: 11, diciembre: 12,
+  ene: 1, feb: 2, mar: 3, abr: 4, may: 5, jun: 6, jul: 7, ago: 8, sep: 9, sept: 9, set: 9, oct: 10, nov: 11, dic: 12,
 };
+const MES = Object.keys(MESES).sort((a, b) => b.length - a.length).join('|');
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -31,22 +33,30 @@ type Found = { fecha: string; index: number };
 
 export function findDates(texto: string): Found[] {
   const found: Found[] = [];
-  const lower = texto.toLowerCase();
+  const lower = cleanOcr(texto);
+  const add = (f: string | null, index: number) => {
+    if (f && !found.some((x) => x.index === index)) found.push({ fecha: f, index });
+  };
 
-  for (const m of lower.matchAll(/\b(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})\b/g)) {
-    const f = iso(Number(m[3]), Number(m[2]), Number(m[1]));
-    if (f) found.push({ fecha: f, index: m.index! });
+  // 2027-03-15 o 2027/03/15
+  for (const m of lower.matchAll(/\b(\d{4})[/.-](\d{1,2})[/.-](\d{1,2})\b/g)) {
+    add(iso(Number(m[1]), Number(m[2]), Number(m[3])), m.index!);
   }
-  for (const m of lower.matchAll(/\b(\d{4})-(\d{2})-(\d{2})\b/g)) {
-    const f = iso(Number(m[1]), Number(m[2]), Number(m[3]));
-    if (f) found.push({ fecha: f, index: m.index! });
+  // 15/03/2027, 15-03-27, 15.03.2027 (en Perú siempre día primero)
+  for (const m of lower.matchAll(/\b(\d{1,2})[/.-](\d{1,2})[/.-](\d{4}|\d{2})\b/g)) {
+    add(iso(Number(m[3]), Number(m[2]), Number(m[1])), m.index!);
   }
-  for (const m of lower.matchAll(/\b(\d{1,2}) de ([a-z]+) (?:de(?:l)? )?(\d{4})\b/g)) {
-    const mes = MESES[m[2]];
-    const f = mes ? iso(Number(m[3]), mes, Number(m[1])) : null;
-    if (f) found.push({ fecha: f, index: m.index! });
+  // 15-mar-2027, 15/MAR/27, 15 mar 2027, 31 de diciembre de 2026, 31 de diciembre del 2026, 31 de dic. 2026
+  const textual = new RegExp(`\\b(\\d{1,2})(?:\\s*de\\s*|[\\s/.-]+)(${MES})\\.?(?:\\s*(?:de(?:l)?\\s*|,\\s*)|[\\s/.-]+)(\\d{4}|\\d{2})\\b`, 'g');
+  for (const m of lower.matchAll(textual)) {
+    add(iso(Number(m[3]), MESES[m[2]], Number(m[1])), m.index!);
   }
-  return found;
+  // marzo 15, 2027 / marzo 15 de 2027
+  const mesPrimero = new RegExp(`\\b(${MES})\\.?\\s+(\\d{1,2}),?\\s+(?:de(?:l)?\\s+)?(\\d{4})\\b`, 'g');
+  for (const m of lower.matchAll(mesPrimero)) {
+    add(iso(Number(m[3]), MESES[m[1]], Number(m[2])), m.index!);
+  }
+  return found.sort((a, b) => a.index - b.index);
 }
 
 // Prefiero la fecha que aparece cerca de "vence", "vigencia" o "hasta"; si no, la más lejana.
