@@ -109,6 +109,19 @@ export function Icon({ name, size = 20, color }: { name: IconName; size?: number
 }
 
 // Aparece desde abajo con un pequeño retraso según su posición.
+export function Appear({ index = 0, children, style }: { index?: number; children: ReactNode; style?: StyleProp<ViewStyle> }) {
+  return (
+    <Animated.View
+      entering={FadeInDown.delay(80 + index * Motion.stagger)
+        .springify()
+        .damping(20)
+        .stiffness(170)}
+      style={[{ gap: Spacing.three }, style]}>
+      {children}
+    </Animated.View>
+  );
+}
+
 export function Screen({
   module,
   icon,
