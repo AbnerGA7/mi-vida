@@ -37,3 +37,28 @@ export function upcomingPayments(pagos: Payment[], hoy = new Date(), dentroDe = 
     .filter((p) => p.dias <= dentroDe)
     .sort((a, b) => a.dias - b.dias || b.monto - a.monto);
 }
+
+export type PaymentReminder = { pagoId: number; cuando: Date; titulo: string; texto: string };
+
+const formato = (monto: number) => `S/ ${monto.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+// Aviso la noche anterior (para tener la plata lista) y la mañana del día, en los próximos dos meses.
+export function planPaymentReminders(pagos: Payment[], ahora = new Date()): PaymentReminder[] {
+  const avisos: PaymentReminder[] = [];
+  for (const p of pagos) {
+    let desde = ahora;
+    for (let vez = 0; vez < 2; vez++) {
+      const [y, m, d] = nextDueDate(p.dia, desde).split('-').map(Number);
+      const vispera = new Date(y, m - 1, d - 1, 19, 0);
+      const mismoDia = new Date(y, m - 1, d, 9, 0);
+      if (vispera > ahora) {
+        avisos.push({ pagoId: p.id, cuando: vispera, titulo: `💳 Mañana pagas ${p.nombre}`, texto: `${formato(p.monto)} · ten la plata lista.` });
+      }
+      if (mismoDia > ahora) {
+        avisos.push({ pagoId: p.id, cuando: mismoDia, titulo: `💳 Hoy vence ${p.nombre}`, texto: `${formato(p.monto)} · regístralo en Mi plata cuando pagues.` });
+      }
+      desde = new Date(y, m - 1, d + 1);
+    }
+  }
+  return avisos.sort((a, b) => a.cuando.getTime() - b.cuando.getTime());
+}
