@@ -68,6 +68,8 @@ export async function completeLocal(messages: ChatMessage[], { maxTokens = 512, 
     n_predict: maxTokens,
     temperature,
     top_p: 0.9,
+    // Qwen 2.5 repite frases si no lo freno un poco.
+    penalty_repeat: 1.1,
     stop: STOP,
     ...(json ? { response_format: { type: 'json_schema' as const, json_schema: { strict: true, schema: json } } } : {}),
   });
