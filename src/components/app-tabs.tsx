@@ -1,7 +1,7 @@
 import { NativeTabs } from 'expo-router/native-tabs';
 import { useColorScheme } from 'react-native';
 
-import { Colors } from '@/constants/theme';
+import { Colors, Font } from '@/constants/theme';
 
 export default function AppTabs() {
   const scheme = useColorScheme();
@@ -13,7 +13,11 @@ export default function AppTabs() {
       indicatorColor={colors.primarySoft}
       labelVisibilityMode="labeled"
       iconColor={{ default: colors.textSecondary, selected: colors.primary }}
-      labelStyle={{ default: { color: colors.textSecondary }, selected: { color: colors.primary, fontWeight: '700' } }}>
+      rippleColor={colors.overlay}
+      labelStyle={{
+        default: { color: colors.textSecondary, fontFamily: Font.medium, fontSize: 12 },
+        selected: { color: colors.text, fontFamily: Font.bold, fontSize: 12 },
+      }}>
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>Hoy</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon md="wb_sunny" sf={{ default: 'sun.max', selected: 'sun.max.fill' }} />
