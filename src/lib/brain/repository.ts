@@ -60,7 +60,7 @@ export async function searchDocuments(pregunta: string, limit = 5) {
   const db = await getDb();
   return db.getAllAsync<Documento>(
     `SELECT d.* FROM documents_fts f JOIN documents d ON d.id = f.rowid
-     WHERE documents_fts MATCH ? ORDER BY bm25(documents_fts) LIMIT ?`,
+     WHERE documents_fts MATCH ? ORDER BY bm25(documents_fts, 10.0, 1.0) LIMIT ?`,
     query,
     limit,
   );
