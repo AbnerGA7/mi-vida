@@ -1,5 +1,5 @@
 import { GEMINI_API_KEY, GEMINI_MODEL } from '@/lib/config';
-import type { ChatMessage } from '@/lib/ai/types';
+import type { AiOptions, ChatMessage } from '@/lib/ai/types';
 
 export function hasCloudKey() {
   return GEMINI_API_KEY.length > 0;
@@ -31,7 +31,7 @@ export async function extractPdfTextCloud(pdfBase64: string) {
   return String(data.candidates?.[0]?.content?.parts?.[0]?.text ?? '').trim();
 }
 
-export async function completeCloud(messages: ChatMessage[], maxTokens = 1024) {
+export async function completeCloud(messages: ChatMessage[], { maxTokens = 1024, temperature = 0.3, json }: AiOptions = {}) {
   const system = messages.find((m) => m.role === 'system');
   const contents = messages
     .filter((m) => m.role !== 'system')
@@ -45,7 +45,11 @@ export async function completeCloud(messages: ChatMessage[], maxTokens = 1024) {
       body: JSON.stringify({
         systemInstruction: system ? { parts: [{ text: system.content }] } : undefined,
         contents,
-        generationConfig: { maxOutputTokens: maxTokens, temperature: 0.3 },
+        generationConfig: {
+          maxOutputTokens: maxTokens,
+          temperature,
+          ...(json ? { responseMimeType: 'application/json' } : {}),
+        },
       }),
     },
   );
