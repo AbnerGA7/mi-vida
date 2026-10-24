@@ -68,11 +68,18 @@ export async function buildBrief(eventos: Evento[] = [], correos: Correo[] = [])
 }
 
 // Programo la notificación diaria con el último resumen; se actualiza cada vez que abro la app.
+const CONTENT_KEY = 'brief_notification_content';
+
 export async function scheduleMorningBrief(brief: Brief) {
-  const perm = await Notifications.requestPermissionsAsync();
+  // Solo pido permiso si todavía no lo tengo (antes lo pedía cada vez que abría Hoy).
+  const actual = await Notifications.getPermissionsAsync();
+  const perm = actual.granted ? actual : await Notifications.requestPermissionsAsync();
   if (!perm.granted) return false;
 
+  // Si el resumen no cambió, no reprogramo nada.
+  const contenido = JSON.stringify(brief);
   const anterior = await SecureStore.getItemAsync(NOTIF_KEY);
+  if (anterior && (await SecureStore.getItemAsync(CONTENT_KEY)) === contenido) return true;
   if (anterior) await Notifications.cancelScheduledNotificationAsync(anterior).catch(() => {});
 
   const id = await Notifications.scheduleNotificationAsync({
@@ -83,6 +90,7 @@ export async function scheduleMorningBrief(brief: Brief) {
     trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: BRIEF_HOUR, minute: 0 },
   });
   await SecureStore.setItemAsync(NOTIF_KEY, id);
+  await SecureStore.setItemAsync(CONTENT_KEY, contenido).catch(() => {});
   return true;
 }
 

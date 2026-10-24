@@ -4,7 +4,17 @@ export type Evento = { id: string; titulo: string; inicio: string; fin: string; 
 export type Correo = { id: string; de: string; asunto: string; fragmento: string };
 
 async function google<T>(token: string, url: string): Promise<T> {
-  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  // Tiempo límite: con mala señal la petición no debe dejar el panel cargando para siempre.
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 10000);
+  let res: Response;
+  try {
+    res = await fetch(url, { headers: { Authorization: `Bearer ${token}` }, signal: ctrl.signal });
+  } catch (e) {
+    throw new Error(ctrl.signal.aborted ? 'Google tardó demasiado en responder' : 'Sin conexión con Google');
+  } finally {
+    clearTimeout(timer);
+  }
   if (res.status === 401) throw new Error('TOKEN_EXPIRADO');
   if (!res.ok) {
     // Incluyo el motivo que da Google (API no habilitada, permiso no otorgado…) para poder arreglarlo.

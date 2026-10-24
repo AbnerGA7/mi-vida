@@ -1,8 +1,9 @@
-import { useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, ScrollView, Text, View } from 'react-native';
 
-import { Badge, Body, Button, Card, Chip, Empty, Input, ListItem, MicButton, Muted, Progress, Row, Screen, Stat, useModule, usePalette, type IconName } from '@/components/ui/kit';
+import { Badge, Body, Button, Card, Chip, Empty, Input, ListItem, MicButton, Muted, Notice, Progress, Row, Screen, Stat, useModule, usePalette, type IconName } from '@/components/ui/kit';
+import { useLoader } from '@/hooks/use-loader';
+import { friendlyError } from '@/lib/ai';
 import { speak, useDictation } from '@/lib/voice';
 import { Spacing } from '@/constants/theme';
 import { formatSoles, summarizeBudgets, type CategoryBudget } from '@/lib/finance/budget';
@@ -45,19 +46,25 @@ export default function PlataScreen() {
   const [guardando, setGuardando] = useState(false);
   const [catPresupuesto, setCatPresupuesto] = useState<string>(CATEGORIAS[0]);
   const [montoPresupuesto, setMontoPresupuesto] = useState('');
+  const [ultimo, setUltimo] = useState<{ id: number; texto: string } | null>(null);
+  const ocultar = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const cargar = useCallback(async () => {
+  const { error, reload: cargar } = useLoader(async () => {
     const [t, b, s, mv] = await Promise.all([monthTotals(), listBudgets(), spentByCategory(), listMonthTransactions()]);
     setTotals(t);
     setBudgets(summarizeBudgets(b, s, new Date()));
     setMovs(mv);
+  }, ['finanzas']);
+
+  useEffect(() => () => {
+    if (ocultar.current) clearTimeout(ocultar.current);
   }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      cargar();
-    }, [cargar]),
-  );
+  const mostrarUltimo = useCallback((u: { id: number; texto: string }) => {
+    setUltimo(u);
+    if (ocultar.current) clearTimeout(ocultar.current);
+    ocultar.current = setTimeout(() => setUltimo(null), 8000);
+  }, []);
 
   // Si lo dicté, confirmo en voz alta lo que registré.
   const { escuchando, parcial, empezar, parar } = useDictation((dicho) => {
@@ -67,17 +74,21 @@ export default function PlataScreen() {
 
   async function registrar(entrada = texto, conVoz = false) {
     if (!entrada.trim()) return;
+    if (guardando) return;
     setGuardando(true);
     try {
       const mov = await quickCapture(entrada);
-      await addTransaction(mov);
+      const id = await addTransaction(mov);
       setTexto('');
-      await cargar();
+      mostrarUltimo({
+        id,
+        texto: `${mov.tipo === 'ingreso' ? 'Ingreso' : 'Gasto'} de ${formatSoles(mov.monto)} · ${mov.categoria} · ${mov.cuenta}`,
+      });
       if (conVoz) {
         speak(`Listo, registré ${mov.tipo === 'ingreso' ? 'un ingreso de' : ''} ${mov.monto} soles en ${mov.categoria}.`);
       }
     } catch (e) {
-      Alert.alert('No pude registrarlo', e instanceof Error ? e.message : 'Intenta con "25 menú con yape"');
+      Alert.alert('No pude registrarlo', friendlyError(e) || 'Intenta con "25 menú con yape"');
     } finally {
       setGuardando(false);
     }
@@ -86,15 +97,36 @@ export default function PlataScreen() {
   async function guardarPresupuesto() {
     const monto = Number(montoPresupuesto.replace(',', '.'));
     if (!Number.isFinite(monto) || monto <= 0) return;
-    await setBudget(catPresupuesto, monto);
-    setMontoPresupuesto('');
-    await cargar();
+    try {
+      await setBudget(catPresupuesto, monto);
+      setMontoPresupuesto('');
+    } catch (e) {
+      Alert.alert('No pude guardar el presupuesto', friendlyError(e));
+    }
+  }
+
+  async function deshacerUltimo() {
+    if (!ultimo) return;
+    const { id } = ultimo;
+    setUltimo(null);
+    await deleteTransaction(id).catch((e) => Alert.alert('No pude deshacerlo', friendlyError(e)));
   }
 
   function borrar(t: Transaction) {
     Alert.alert('¿Borrar movimiento?', `${t.descripcion} · ${formatSoles(t.monto)}`, [
       { text: 'Cancelar', style: 'cancel' },
-      { text: 'Borrar', style: 'destructive', onPress: () => deleteTransaction(t.id).then(cargar) },
+      {
+        text: 'Borrar',
+        style: 'destructive',
+        onPress: () => {
+          // Lo quito de la lista al toque; la base se actualiza detrás.
+          setMovs((prev) => prev.filter((x) => x.id !== t.id));
+          deleteTransaction(t.id).catch((e) => {
+            Alert.alert('No pude borrarlo', friendlyError(e));
+            cargar();
+          });
+        },
+      },
     ]);
   }
 
@@ -104,6 +136,7 @@ export default function PlataScreen() {
 
   return (
     <Screen module="plata" icon="wallet-outline" title="Mi plata" subtitle={`Resumen de ${mes}`}>
+      {error ? <Notice tone="danger" text={`No pude cargar tus datos: ${error}`} actionLabel="Reintentar" onAction={cargar} /> : null}
       <Card>
         <Muted>Balance del mes</Muted>
         <Text style={{ color: balance < 0 ? p.danger : p.text, fontSize: 36, fontWeight: '800' }}>{formatSoles(balance)}</Text>
@@ -128,7 +161,15 @@ export default function PlataScreen() {
           <MicButton escuchando={escuchando} color={m.solid} onPress={escuchando ? parar : empezar} />
         </Row>
         <Button label="Guardar" icon="check" color={m.solid} loading={guardando} onPress={() => registrar()} />
-        <Muted size={12}>Lo entiendo al toque; si es raro, lo interpreta la IA local sin salir del celular.</Muted>
+        {ultimo ? (
+          <Notice tone="success" text={`Registrado: ${ultimo.texto}`} actionLabel="Deshacer" onAction={deshacerUltimo} />
+        ) : null}
+        <Row gap={6} style={{ flexWrap: 'wrap' }}>
+          {['10 pasaje', '15 menú yape', '50 mercado', 'me pagaron 1200'].map((ej) => (
+            <Chip key={ej} label={ej} selected={false} color={m.solid} onPress={() => setTexto(ej)} />
+          ))}
+        </Row>
+        <Muted size={12}>Lo común lo entiendo al instante sin IA; lo raro lo interpreta la IA.</Muted>
       </Card>
 
       <Card title="Presupuestos" icon="chart-donut" accent={m.solid}>

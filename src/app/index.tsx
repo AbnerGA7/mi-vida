@@ -1,9 +1,10 @@
 import * as Notifications from 'expo-notifications';
-import { useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
-import { RefreshControl } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, RefreshControl } from 'react-native';
 
-import { Badge, Body, Button, Card, Empty, Icon, Input, ListItem, Muted, Row, Screen, Stat, useModule, usePalette } from '@/components/ui/kit';
+import { Badge, Body, Button, Card, Empty, Icon, Input, ListItem, Muted, Notice, Row, Screen, Stat, useModule, usePalette } from '@/components/ui/kit';
+import { useLoader } from '@/hooks/use-loader';
+import { friendlyError } from '@/lib/ai';
 import { useGoogleAuthRequest } from '@/lib/auth/google';
 import { BRIEF_HOUR, buildBrief, scheduleMorningBrief, sendBriefNow, type Brief } from '@/lib/brief';
 import { horaCorta, importantEmails, todayEvents, type Correo, type Evento } from '@/lib/google/api';
@@ -39,7 +40,6 @@ export default function HoyScreen() {
   const [tareas, setTareas] = useState<Tarea[]>([]);
   const [brief, setBrief] = useState<Brief | null>(null);
   const [googleError, setGoogleError] = useState<string | null>(null);
-  const [cargando, setCargando] = useState(false);
   const [nueva, setNueva] = useState('');
 
   // El token de Google dura ~1 hora: si venció, reconecto desde aquí.
@@ -49,39 +49,89 @@ export default function HoyScreen() {
     }
   }, [response, signIn]);
 
-  const cargar = useCallback(async () => {
-    setCargando(true);
-    let ev: Evento[] = [];
-    let co: Correo[] = [];
-    if (accessToken) {
+  // Primero lo local (instantáneo), después Google (red): la pantalla no espera a internet.
+  // Google se consulta como mucho cada 2 minutos (completar una tarea no debe llamar a la red).
+  const googleAt = useRef(0);
+  const forzar = useRef(false);
+  const cargarGoogle = useCallback(async () => {
+    let ev: Evento[] = eventos;
+    let co: Correo[] = correos;
+    const fresco = Date.now() - googleAt.current < 120000;
+    if (accessToken && (forzar.current || !fresco)) {
+      forzar.current = false;
+      googleAt.current = Date.now();
       try {
         [ev, co] = await Promise.all([todayEvents(accessToken), importantEmails(accessToken)]);
+        setEventos(ev);
+        setCorreos(co);
         setGoogleError(null);
       } catch (e) {
+        googleAt.current = 0;
         const msg = e instanceof Error ? e.message : String(e);
         setGoogleError(msg === 'TOKEN_EXPIRADO' ? 'Tu conexión con Google venció.' : `No pude leer Google · ${msg}`);
       }
     }
-    const [t, b] = await Promise.all([upcomingTasks(), buildBrief(ev, co)]);
-    setEventos(ev);
-    setCorreos(co);
-    setTareas(t);
-    setBrief(b);
-    await scheduleMorningBrief(b);
-    setCargando(false);
-  }, [accessToken]);
+    return { ev, co };
+  }, [accessToken, eventos, correos]);
 
-  useFocusEffect(
-    useCallback(() => {
-      cargar();
-    }, [cargar]),
-  );
+  const cargarGoogleRef = useRef(cargarGoogle);
+  useEffect(() => {
+    cargarGoogleRef.current = cargarGoogle;
+  }, [cargarGoogle]);
+
+  const { loading: cargando, error, reload: cargar } = useLoader(async () => {
+    const [t, bLocal] = await Promise.all([upcomingTasks(), buildBrief(eventos, correos)]);
+    setTareas(t);
+    setBrief(bLocal);
+    const { ev, co } = await cargarGoogleRef.current();
+    const b = accessToken ? await buildBrief(ev, co) : bLocal;
+    setBrief(b);
+    // La notificación se programa en segundo plano: nunca bloquea la pantalla.
+    scheduleMorningBrief(b).catch(() => {});
+  }, ['tareas', 'finanzas', 'documentos', 'coach']);
+
+  // Al reconectar Google recargo para traer agenda y correos.
+  const [tokenAnterior, setTokenAnterior] = useState(accessToken);
+  useEffect(() => {
+    if (accessToken !== tokenAnterior) {
+      setTokenAnterior(accessToken);
+      if (accessToken) {
+        forzar.current = true;
+        cargar();
+      }
+    }
+  }, [accessToken, tokenAnterior, cargar]);
 
   async function agregarTarea() {
-    if (!nueva.trim()) return;
-    await addTask(nueva);
+    const texto = nueva.trim();
+    if (!texto) return;
     setNueva('');
-    cargar();
+    try {
+      await addTask(texto);
+    } catch (e) {
+      setNueva(texto);
+      Alert.alert('No pude crear la tarea', friendlyError(e));
+    }
+  }
+
+  // Completar/borrar se ve al toque; si la base falla, recargo para volver al estado real.
+  function completar(t: Tarea) {
+    setTareas((prev) => prev.filter((x) => x.id !== t.id));
+    toggleTask(t.id).catch(() => cargar());
+  }
+
+  function borrarTarea(t: Tarea) {
+    Alert.alert('¿Borrar tarea?', t.titulo, [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Borrar',
+        style: 'destructive',
+        onPress: () => {
+          setTareas((prev) => prev.filter((x) => x.id !== t.id));
+          deleteTask(t.id).catch(() => cargar());
+        },
+      },
+    ]);
   }
 
   const nombre = user?.name?.split(' ')[0];
@@ -95,7 +145,16 @@ export default function HoyScreen() {
       icon="white-balance-sunny"
       title={`${saludo()}${nombre ? `, ${nombre}` : ''}`}
       subtitle={fechaLarga()}
-      refreshControl={<RefreshControl refreshing={cargando} onRefresh={cargar} />}>
+      refreshControl={
+        <RefreshControl
+          refreshing={cargando}
+          onRefresh={() => {
+            forzar.current = true;
+            cargar();
+          }}
+        />
+      }>
+      {error ? <Notice tone="danger" text={`No pude cargar tu día: ${error}`} actionLabel="Reintentar" onAction={cargar} /> : null}
       {brief ? (
         <Card>
           <Row>
@@ -155,13 +214,13 @@ export default function HoyScreen() {
                 iconColor={BUCKET[bucket]}
                 title={`${t.prioridad === 'alta' ? '❗ ' : ''}${t.titulo}`}
                 subtitle={`${bucket}${t.fecha_limite ? ` · ${t.fecha_limite}` : ''}`}
-                onPress={() => toggleTask(t.id).then(cargar)}
-                onLongPress={() => deleteTask(t.id).then(cargar)}
+                onPress={() => completar(t)}
+                onLongPress={() => borrarTarea(t)}
               />
             );
           })
         )}
-        <Muted size={12}>Toca para completar · mantén presionado para borrar</Muted>
+        <Muted size={12}>Toca para completar · mantén presionado para borrar · o pídeselo al asistente ✨</Muted>
       </Card>
 
       {correos.length > 0 && (
@@ -178,7 +237,12 @@ export default function HoyScreen() {
             <Body key={i}>{l}</Body>
           ))}
           <Muted size={12}>Te llega cada día a las {BRIEF_HOUR}:00 y se actualiza cada vez que abres la app.</Muted>
-          <Button label="Enviarme el resumen ahora" icon="bell-ring-outline" variant="secondary" onPress={() => sendBriefNow(brief)} />
+          <Button
+            label="Enviarme el resumen ahora"
+            icon="bell-ring-outline"
+            variant="secondary"
+            onPress={() => sendBriefNow(brief).catch((e) => Alert.alert('No pude enviar la notificación', friendlyError(e)))}
+          />
         </Card>
       )}
     </Screen>

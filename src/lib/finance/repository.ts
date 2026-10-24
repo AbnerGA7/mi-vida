@@ -1,4 +1,5 @@
 import { getDb } from '@/lib/db';
+import { emitDataChanged } from '@/lib/events';
 import type { MonthlyBudget, SpentByCategory } from '@/lib/finance/budget';
 
 export const CATEGORIAS = [
@@ -37,7 +38,7 @@ function monthRange(today: Date) {
 
 export async function addTransaction(t: NewTransaction) {
   const db = await getDb();
-  await db.runAsync(
+  const r = await db.runAsync(
     'INSERT INTO transactions (fecha, monto, tipo, descripcion, categoria, cuenta) VALUES (?, ?, ?, ?, ?, ?)',
     t.fecha,
     t.monto,
@@ -46,11 +47,14 @@ export async function addTransaction(t: NewTransaction) {
     t.categoria,
     t.cuenta,
   );
+  emitDataChanged('finanzas');
+  return r.lastInsertRowId;
 }
 
 export async function deleteTransaction(id: number) {
   const db = await getDb();
   await db.runAsync('DELETE FROM transactions WHERE id = ?', id);
+  emitDataChanged('finanzas');
 }
 
 export async function listMonthTransactions(today = new Date()) {
@@ -100,4 +104,5 @@ export async function setBudget(categoria: string, monto_mensual: number) {
     categoria,
     monto_mensual,
   );
+  emitDataChanged('finanzas');
 }

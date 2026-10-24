@@ -1,4 +1,5 @@
 import { getDb } from '@/lib/db';
+import { emitDataChanged } from '@/lib/events';
 
 export type Tarea = { id: number; titulo: string; fecha_limite: string | null; prioridad: 'alta' | 'media'; hecha: number };
 
@@ -54,19 +55,23 @@ export function parseTask(texto: string, today = new Date()) {
 
 export async function addTask(texto: string) {
   const { titulo, fecha_limite, prioridad } = parseTask(texto);
-  if (!titulo) return;
+  if (!titulo) return null;
   const db = await getDb();
-  await db.runAsync('INSERT INTO tasks (titulo, fecha_limite, prioridad) VALUES (?, ?, ?)', titulo, fecha_limite, prioridad);
+  const r = await db.runAsync('INSERT INTO tasks (titulo, fecha_limite, prioridad) VALUES (?, ?, ?)', titulo, fecha_limite, prioridad);
+  emitDataChanged('tareas');
+  return { id: r.lastInsertRowId, titulo, fecha_limite, prioridad };
 }
 
 export async function toggleTask(id: number) {
   const db = await getDb();
   await db.runAsync('UPDATE tasks SET hecha = 1 - hecha WHERE id = ?', id);
+  emitDataChanged('tareas');
 }
 
 export async function deleteTask(id: number) {
   const db = await getDb();
   await db.runAsync('DELETE FROM tasks WHERE id = ?', id);
+  emitDataChanged('tareas');
 }
 
 // Pendientes vencidas, de hoy y de los próximos 3 días, más las sin fecha.
