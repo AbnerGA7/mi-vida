@@ -1,41 +1,45 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://unistyl.es/), etc.
+ * Sistema de diseño de Mi Vida: colores, tipografía, espaciado, radios, sombras y movimiento.
+ * Todas las pantallas lo consumen a través de `src/components/ui/kit.tsx`.
  */
 
 import '@/global.css';
 
-import { Platform } from 'react-native';
+import { Platform, type TextStyle } from 'react-native';
 
-// Paleta de Mi Vida: verde andino de marca, sol ámbar y fondos cálidos.
+// Paleta: verde andino de marca y sol ámbar, sobre neutros fríos y limpios.
 export const Colors = {
   light: {
-    text: '#0B1F1C',
-    background: '#F4F7F5',
+    text: '#0E1116',
+    textSecondary: '#5E6673',
+    textTertiary: '#9AA1AD',
+    background: '#F4F5F7',
     backgroundElement: '#FFFFFF',
-    backgroundSelected: '#E3ECE8',
-    textSecondary: '#5B6B66',
-    border: '#E1E8E5',
-    primary: '#0F766E',
-    primarySoft: '#D5F2EC',
+    backgroundSelected: '#ECEEF2',
+    border: 'rgba(14,17,22,0.08)',
+    primary: '#0D9488',
+    primarySoft: '#D7F3EE',
     onPrimary: '#FFFFFF',
-    success: '#16A34A',
-    warning: '#D97706',
-    danger: '#DC2626',
+    success: '#12B76A',
+    warning: '#F59E0B',
+    danger: '#F04438',
+    overlay: 'rgba(14,17,22,0.04)',
   },
   dark: {
-    text: '#ECF5F2',
-    background: '#0A1211',
-    backgroundElement: '#131D1B',
-    backgroundSelected: '#1E2B28',
-    textSecondary: '#93A6A0',
-    border: '#22312E',
+    text: '#F3F5F9',
+    textSecondary: '#9AA3B2',
+    textTertiary: '#5E6675',
+    background: '#08090C',
+    backgroundElement: '#111318',
+    backgroundSelected: '#1A1D24',
+    border: 'rgba(255,255,255,0.07)',
     primary: '#2DD4BF',
-    primarySoft: '#123A35',
+    primarySoft: '#0F2F2B',
     onPrimary: '#04201C',
-    success: '#4ADE80',
-    warning: '#FBBF24',
-    danger: '#F87171',
+    success: '#32D583',
+    warning: '#FDB022',
+    danger: '#F97066',
+    overlay: 'rgba(255,255,255,0.04)',
   },
 } as const;
 
