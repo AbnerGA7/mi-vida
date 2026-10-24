@@ -374,16 +374,21 @@ export function Empty({ icon, text }: { icon: IconName; text: string }) {
   );
 }
 
-export function Muted({ children, size = 13 }: { children: ReactNode; size?: number }) {
+export function Muted({ children, size = 13, center }: { children: ReactNode; size?: number; center?: boolean }) {
   const p = usePalette();
-  return <Text style={{ color: p.textSecondary, fontSize: size }}>{children}</Text>;
+  return (
+    <Text style={{ color: p.textSecondary, fontSize: size, lineHeight: size * 1.4, fontFamily: Font.medium, textAlign: center ? 'center' : undefined }}>
+      {children}
+    </Text>
+  );
 }
 
-export function Body({ children, color, bold }: { children: ReactNode; color?: string; bold?: boolean }) {
+export function Body({ children, color, bold, style }: { children: ReactNode; color?: string; bold?: boolean; style?: StyleProp<TextStyle> }) {
   const p = usePalette();
-  return <Text style={{ color: color ?? p.text, fontSize: 15, lineHeight: 22, fontWeight: bold ? '700' : '400' }}>{children}</Text>;
+  return <Text style={[bold ? Type.bodyStrong : Type.body, { color: color ?? p.text }, bold ? { fontFamily: Font.bold } : null, style]}>{children}</Text>;
 }
 
+// Número grande para cifras protagonistas (balance, calorías…).
 export function Row({ children, gap = Spacing.two, style }: { children: ReactNode; gap?: number; style?: ViewStyle }) {
   return <View style={[{ flexDirection: 'row', alignItems: 'center', gap }, style]}>{children}</View>;
 }
