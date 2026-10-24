@@ -135,19 +135,32 @@ export default function HoyScreen() {
         </Card>
       )}
 
-      <Card title="Agenda de hoy" icon="calendar-today" accent={m.solid}>
+      <Card
+        title="Agenda de hoy"
+        icon="calendar-today"
+        accent={m.solid}
+        right={eventos.length ? <Badge label={`${eventos.length}`} color={m.solid} /> : undefined}>
         {eventos.length === 0 ? (
-          <Empty icon="calendar-blank-outline" text="Nada en el calendario. Día libre para avanzar." />
+          <Empty icon="calendar-blank-outline" color={m.solid} text="Nada en el calendario. Día libre para avanzar." />
         ) : (
-          eventos.map((e) => (
-            <ListItem
-              key={e.id}
-              icon={e.enlace ? 'video-outline' : 'clock-outline'}
-              iconColor={m.solid}
-              title={e.titulo}
-              subtitle={e.todoElDia ? 'Todo el día' : `${horaCorta(e.inicio)} – ${horaCorta(e.fin)}`}
-            />
-          ))
+          <View>
+            {eventos.map((e, i) => (
+              <View key={e.id} style={styles.event}>
+                <View style={styles.eventTime}>
+                  <Text style={[Type.callout, { color: p.text, fontFamily: Font.bold }]}>{e.todoElDia ? 'Día' : horaCorta(e.inicio)}</Text>
+                  {!e.todoElDia ? <Text style={[Type.caption, { color: p.textTertiary }]}>{horaCorta(e.fin)}</Text> : null}
+                </View>
+                <View style={styles.eventRail}>
+                  <View style={[styles.eventDot, { backgroundColor: m.solid, boxShadow: `0px 0px 0px 4px ${alpha(m.solid, 0.18)}` }]} />
+                  {i < eventos.length - 1 ? <View style={[styles.eventLine, { backgroundColor: p.border }]} /> : null}
+                </View>
+                <View style={{ flex: 1, paddingBottom: Spacing.three, gap: 2 }}>
+                  <Body bold>{e.titulo}</Body>
+                  <Muted size={12}>{e.todoElDia ? 'Todo el día' : e.enlace ? 'Videollamada' : 'Presencial'}</Muted>
+                </View>
+              </View>
+            ))}
+          </View>
         )}
       </Card>
 
