@@ -251,17 +251,41 @@ export function Button({
   );
 }
 
-export function Input({ icon, style, ...props }: TextInputProps & { icon?: IconName }) {
+export function Input({ icon, style, accent, onFocus, onBlur, ...props }: TextInputProps & { icon?: IconName; accent?: string }) {
   const p = usePalette();
+  const [focus, setFocus] = useState(false);
+  const c = accent ?? p.primary;
   return (
-    <View style={[styles.input, { backgroundColor: p.background, borderColor: p.border }]}>
-      {icon ? <MaterialCommunityIcons name={icon} size={20} color={p.textSecondary} /> : null}
-      <TextInput placeholderTextColor={p.textSecondary} style={[styles.inputText, { color: p.text }, style]} {...props} />
+    <View
+      style={[
+        styles.input,
+        {
+          backgroundColor: focus ? p.backgroundElement : p.backgroundSelected,
+          borderColor: focus ? c : 'transparent',
+          boxShadow: focus ? `0px 0px 0px 4px ${alpha(c, 0.14)}` : undefined,
+        },
+      ]}>
+      {icon ? <MaterialCommunityIcons name={icon} size={20} color={focus ? c : p.textSecondary} /> : null}
+      <TextInput
+        placeholderTextColor={p.textTertiary}
+        selectionColor={c}
+        cursorColor={c}
+        onFocus={(e) => {
+          setFocus(true);
+          onFocus?.(e);
+        }}
+        onBlur={(e) => {
+          setFocus(false);
+          onBlur?.(e);
+        }}
+        style={[styles.inputText, { color: p.text }, style]}
+        {...props}
+      />
     </View>
   );
 }
 
-// Botón redondo de micrófono: se pone rojo mientras escucha.
+// Botón redondo de micrófono: late con ondas mientras escucha.
 export function MicButton({ escuchando, onPress, color }: { escuchando: boolean; onPress: () => void; color?: string }) {
   const p = usePalette();
   const c = escuchando ? p.danger : (color ?? p.primary);
@@ -600,12 +624,13 @@ const styles = StyleSheet.create({
   input: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.two,
-    borderWidth: 1,
-    borderRadius: 14,
-    paddingHorizontal: Spacing.three,
+    gap: Spacing.two + 2,
+    borderWidth: 1.5,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.three - 2,
+    minHeight: 52,
   },
-  inputText: { flex: 1, fontSize: 16, paddingVertical: 13 },
+  inputText: { flex: 1, fontSize: 15.5, fontFamily: Font.medium, paddingVertical: 12 },
   mic: { width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center' },
   chip: {
     flexDirection: 'row',
