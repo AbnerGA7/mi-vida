@@ -113,7 +113,8 @@ export default function CerebroScreen() {
     setPensando(true);
     stopSpeaking();
     try {
-      const r = await askDocuments(texto);
+      // Muestro la respuesta mientras la IA la escribe, sin esperar al final.
+      const r = await askDocuments(texto, (parcial) => setRespuesta({ texto: parcial, fuentes: [], source: null }));
       setRespuesta(r);
       if (conVoz) speak(r.texto);
     } catch (e) {
