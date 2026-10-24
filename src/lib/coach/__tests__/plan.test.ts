@@ -47,6 +47,14 @@ describe('rutina', () => {
     expect(nombres).toContain('Prensa');
   });
 
+  test('entiende la lesión dicha con otras palabras o con tilde', () => {
+    const nombres = (lesion: string) => adaptToInjuries(buildRoutine(3), lesion).sesiones.flatMap((s) => s.ejercicios.map((e) => e.nombre));
+    expect(nombres('hernia lumbar')).not.toContain('Peso muerto rumano');
+    expect(nombres('operado de menisco')).not.toContain('Sentadilla');
+    expect(nombres('manguito rotador')).not.toContain('Press militar');
+    expect(nombres('Rótula')).not.toContain('Zancadas');
+  });
+
   test('sin lesiones la rutina queda igual', () => {
     const r = buildRoutine(4);
     expect(adaptToInjuries(r, null)).toBe(r);
