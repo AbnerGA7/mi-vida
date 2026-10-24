@@ -19,16 +19,8 @@ import {
   type Profile,
 } from '@/lib/coach/repository';
 import { adaptToInjuries, buildRoutine, todaySession, type Ejercicio } from '@/lib/coach/routine';
+import { isoWeek } from '@/lib/coach/progress';
 import { today } from '@/lib/finance/quick-capture';
-
-function isoWeek(d = new Date()) {
-  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-  const day = t.getUTCDay() || 7;
-  t.setUTCDate(t.getUTCDate() + 4 - day);
-  const yearStart = Date.UTC(t.getUTCFullYear(), 0, 1);
-  const week = Math.ceil(((t.getTime() - yearStart) / 86400000 + 1) / 7);
-  return `${t.getUTCFullYear()}-S${String(week).padStart(2, '0')}`;
-}
 
 const num = (s: string) => Number(s.replace(',', '.'));
 
