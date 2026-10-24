@@ -310,6 +310,7 @@ function WeeklyCheckin({ onSaved }: { onSaved: () => void }) {
       </Row>
       <Input icon="note-edit-outline" placeholder="Notas (dolor, cómo te sentiste)" value={f.notas} onChangeText={set('notas')} />
       <Button label="Guardar y ajustar plan" icon="content-save-outline" color={m.solid} onPress={guardar} />
+      <Muted size={12}>Te lo recuerdo cada domingo a las 6 pm.</Muted>
     </Card>
   );
 }
