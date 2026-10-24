@@ -22,7 +22,8 @@ Mi app personal para ordenar mi vida desde el celular: **mi plata, mi cuerpo, mi
 
 - **Agenda de hoy** desde Google Calendar y **correos importantes sin leer** de las últimas 48 h desde Gmail, todo en solo lectura.
 - **Tareas en una línea** con fechas en lenguaje natural, entendidas en código: "pagar luz el viernes!" crea la tarea para el próximo viernes con prioridad alta. También entiende "hoy", "mañana", "pasado mañana" y "15/03".
-- **Resumen matutino:** junta mi agenda, tareas, presupuestos en riesgo, documentos por vencer y el gym de hoy. Llega como **notificación a las 7:00**.
+- **Resumen matutino:** junta mi agenda, tareas, presupuestos en riesgo, pagos fijos de los próximos 3 días, documentos por vencer y el gym de hoy. Llega como **notificación a las 7:00**.
+  - Solo se reprograma si el texto cambió (guardo la huella SHA-256), y Google se reusa por 5 minutos al cambiar de pestaña; deslizar hacia abajo siempre recarga.
   - El texto se arma en el celular y se actualiza cada vez que abro la app, así que muestra los datos de la última vez que la abrí.
   - El token de Google dura ~1 hora: si venció, el panel me pide reconectar con un botón.
 
