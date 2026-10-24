@@ -1,9 +1,11 @@
 import * as Notifications from 'expo-notifications';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { RefreshControl } from 'react-native';
+import { Image } from 'expo-image';
+import { RefreshControl, StyleSheet, Text, View } from 'react-native';
 
-import { Badge, Body, Button, Card, Empty, Icon, Input, ListItem, Muted, Row, Screen, Stat, useModule, usePalette } from '@/components/ui/kit';
+import { alpha, Badge, Body, Button, Card, Divider, Empty, Input, ListItem, Muted, Row, Screen, Stat, useModule, usePalette } from '@/components/ui/kit';
+import { Font, Spacing, Type } from '@/constants/theme';
 import { useGoogleAuthRequest } from '@/lib/auth/google';
 import { BRIEF_HOUR, buildBrief, scheduleMorningBrief, sendBriefNow, type Brief } from '@/lib/brief';
 import { horaCorta, importantEmails, todayEvents, type Correo, type Evento } from '@/lib/google/api';
@@ -114,26 +116,20 @@ export default function HoyScreen() {
     <Screen
       module="hoy"
       icon="white-balance-sunny"
+      eyebrow={fechaLarga()}
       title={`${saludo()}${nombre ? `, ${nombre}` : ''}`}
-      subtitle={fechaLarga()}
-      refreshControl={<RefreshControl refreshing={cargando} onRefresh={() => cargar(true)} />}>
-      {brief ? (
-        <Card>
-          <Row>
-            <Icon name="star-four-points" color={m.solid} />
-            <Body bold>{brief.titular}</Body>
-          </Row>
-        </Card>
-      ) : null}
-
-      <Row gap={10}>
-        <Stat label="Tareas hoy" value={String(paraHoy)} icon="checkbox-marked-circle-outline" color={paraHoy ? p.warning : p.success} />
-        <Stat label="Reuniones" value={String(reuniones)} icon="calendar-clock" color={m.solid} />
-        <Stat label="Correos" value={String(correos.length)} icon="email-outline" color={p.primary} />
-      </Row>
-
+      subtitle={brief?.titular}
+      right={user?.picture ? <Image source={{ uri: user.picture }} style={styles.avatar} /> : undefined}
+      refreshControl={<RefreshControl refreshing={cargando} onRefresh={() => cargar(true)} />}
+      hero={
+        <Row gap={10}>
+          <Stat tone="hero" label="Tareas hoy" value={String(paraHoy)} icon="checkbox-marked-circle-outline" />
+          <Stat tone="hero" label="Reuniones" value={String(reuniones)} icon="calendar-clock" />
+          <Stat tone="hero" label="Correos" value={String(correos.length)} icon="email-outline" />
+        </Row>
+      }>
       {(!accessToken || googleError) && (
-        <Card title="Conecta Google" icon="google" accent={p.primary}>
+        <Card title="Conecta Google" subtitle="Agenda y correos en solo lectura" icon="google" accent={p.primary} variant="tinted">
           <Muted>{googleError ?? 'Conecta tu cuenta para ver tu agenda y tus correos importantes.'}</Muted>
           <Button label="Conectar Google" icon="link-variant" disabled={!request} onPress={() => promptAsync()} />
         </Card>
@@ -205,3 +201,13 @@ export default function HoyScreen() {
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  avatar: { width: 40, height: 40, borderRadius: 20, borderWidth: 2, borderColor: 'rgba(255,255,255,0.6)' },
+  event: { flexDirection: 'row', gap: Spacing.three - 4 },
+  eventTime: { width: 50, alignItems: 'flex-end', paddingTop: 1 },
+  eventRail: { width: 12, alignItems: 'center', paddingTop: 6 },
+  eventDot: { width: 10, height: 10, borderRadius: 5 },
+  eventLine: { width: 2, flex: 1, marginTop: 6, borderRadius: 1 },
+  bullet: { width: 6, height: 6, borderRadius: 3, marginTop: 8 },
+});
