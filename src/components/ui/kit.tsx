@@ -459,6 +459,7 @@ export function ListItem({
   right,
   onPress,
   onLongPress,
+  done,
 }: {
   icon?: IconName;
   iconColor?: string;
@@ -467,25 +468,35 @@ export function ListItem({
   right?: ReactNode;
   onPress?: () => void;
   onLongPress?: () => void;
+  done?: boolean;
 }) {
   const p = usePalette();
+  const c = iconColor ?? p.primary;
+  const interactive = !!(onPress || onLongPress);
   return (
     <Pressable
       onPress={onPress}
       onLongPress={onLongPress}
-      style={({ pressed }) => [styles.item, { opacity: pressed && (onPress || onLongPress) ? 0.7 : 1 }]}>
+      disabled={!interactive}
+      android_ripple={interactive ? { color: p.overlay, borderless: false } : undefined}
+      style={({ pressed }) => [styles.item, pressed && interactive ? { backgroundColor: p.overlay } : null]}>
       {icon ? (
-        <View style={[styles.itemIcon, { backgroundColor: (iconColor ?? p.primary) + '1F' }]}>
-          <MaterialCommunityIcons name={icon} size={18} color={iconColor ?? p.primary} />
+        <View style={[styles.itemIcon, { backgroundColor: alpha(c, p.dark ? 0.18 : 0.12) }]}>
+          <MaterialCommunityIcons name={icon} size={20} color={c} />
         </View>
       ) : null}
-      <View style={{ flex: 1, gap: 2 }}>
-        <Text style={{ color: p.text, fontSize: 15, fontWeight: '600' }} numberOfLines={1}>
+      <View style={{ flex: 1, gap: 3 }}>
+        <Text
+          style={[
+            Type.bodyStrong,
+            { color: done ? p.textTertiary : p.text, textDecorationLine: done ? 'line-through' : 'none' },
+          ]}
+          numberOfLines={1}>
           {title}
         </Text>
         {subtitle ? (
           typeof subtitle === 'string' ? (
-            <Text style={{ color: p.textSecondary, fontSize: 13 }} numberOfLines={2}>
+            <Text style={[Type.caption, { color: p.textSecondary, fontSize: 13, lineHeight: 18 }]} numberOfLines={2}>
               {subtitle}
             </Text>
           ) : (
@@ -612,8 +623,16 @@ const styles = StyleSheet.create({
   stat: { flex: 1, borderRadius: Radius.md + 2, padding: Spacing.three - 2, gap: 4 },
   statHero: { backgroundColor: 'rgba(255,255,255,0.16)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)' },
   statIcon: { width: 28, height: 28, borderRadius: 9, alignItems: 'center', justifyContent: 'center', marginBottom: 2 },
-  item: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.two },
-  itemIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  item: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three - 2,
+    paddingVertical: Spacing.two,
+    marginHorizontal: -Spacing.two,
+    paddingHorizontal: Spacing.two,
+    borderRadius: Radius.md,
+  },
+  itemIcon: { width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   empty: { alignItems: 'center', gap: Spacing.two + 4, paddingVertical: Spacing.four },
   emptyIcon: { width: 56, height: 56, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
 
