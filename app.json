@@ -69,7 +69,7 @@
             ],
             "enableMinifyInReleaseBuilds": true,
             "enableShrinkResourcesInReleaseBuilds": true,
-            "extraProguardRules": "-keep class com.rnllama.** { *; }\n-keep class com.rnmlkit.** { *; }\n-keep class org.songsterq.pdfthumbnail.** { *; }\n-keep class expo.modules.speechrecognition.** { *; }"
+            "extraProguardRules": "-keep class com.rnllama.** { *; }\n-keep class com.rnmlkit.** { *; }\n-keep class org.songsterq.pdfthumbnail.** { *; }\n-keep class expo.modules.speechrecognition.** { *; }\n-keep class androidx.work.** { *; }\n-keep class * extends androidx.room.RoomDatabase { <init>(); }\n-keep class androidx.room.** { *; }"
           }
         }
       ],
