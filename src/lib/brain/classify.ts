@@ -242,3 +242,27 @@ export function classifyByRules(nombre: string, texto: string): RuleResult {
 export function vigenciaDe(tipo: string | null) {
   return TIPOS.find((t) => t.tipo === tipo)?.vigenciaAnios;
 }
+
+const ASEGURADORAS = ['Rímac', 'Pacífico', 'La Positiva', 'Mapfre', 'Interseguro', 'Protecta', 'Chubb', 'Qualitas', 'Sanitas', 'AFOCAT'];
+
+// Datos sueltos que leo en código para armar el resumen sin IA.
+export function extractFields(texto: string) {
+  const t = normalize(texto);
+  // Placas peruanas: ABC-123, A1B-234 (autos) o 1234-AB (motos), justo después de "placa".
+  const placa = t.match(/placa\s*(?:n(?:ro|°|º|o)?\.?)?\s*:?\s*\b([a-z0-9]{3,4})\s?-?\s?([a-z0-9]{2,3})\b/);
+  const placaOk = placa && /\d/.test(placa[1] + placa[2]) && /[a-z]/.test(placa[1] + placa[2]) ? `${placa[1]}-${placa[2]}`.toUpperCase() : undefined;
+  const aseguradora = ASEGURADORAS.find((a) => t.includes(normalize(a)));
+  const poliza = t.match(/(?:poliza|certificado)\s*(?:n(?:ro|°|º|o)?\.?\s*)?:?\s*([a-z0-9-]{5,})/);
+  const ultimos4 = poliza?.[1].replace(/\D/g, '').slice(-4);
+  return { placa: placaOk, aseguradora, poliza: ultimos4 && ultimos4.length === 4 ? ultimos4 : undefined };
+}
+
+export function resumenPorReglas(tipo: string | null, texto: string, nombre: string) {
+  if (!tipo) return nombre;
+  const f = extractFields(texto);
+  const partes = [tipo];
+  if (f.aseguradora) partes.push(f.aseguradora);
+  if (f.placa) partes.push(`placa ${f.placa}`);
+  if (f.poliza) partes.push(`póliza ···${f.poliza}`);
+  return partes.join(' · ');
+}
