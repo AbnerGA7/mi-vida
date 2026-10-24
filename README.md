@@ -106,7 +106,8 @@ La APK se compila solo para **arm64-v8a**, con R8 y reducción de recursos en re
 
 ```bash
 npm run typecheck # tipos (tsc --noEmit)
-npm test           # bun test: clasificación, fechas, respuestas, voz, boletas, pagos, metas y progreso
+npm test           # bun test: clasificación, fechas, respuestas, voz, boletas, pagos, metas, progreso,
+                   # tareas, registro rápido, JSON de la IA, intención del asistente y resumen del día
 ```
 
 Las pruebas usan textos como los devuelve el OCR de ML Kit y cubren solo la lógica en código puro (sin módulos nativos).
@@ -148,8 +149,11 @@ src/
    ├─ config.ts         correo permitido, modelos y llaves
    ├─ session.tsx       sesión y bloqueo automático
    ├─ secure-store.ts   sesión y llave de cifrado
-   ├─ tasks.ts          tareas con fechas en lenguaje natural
+   ├─ tasks.ts          tareas guardadas en la base de datos
+   ├─ task-parse.ts     tareas con fechas en lenguaje natural (código puro)
    ├─ brief.ts          resumen del día y notificación de las 7 am
+   ├─ brief-text.ts     texto del resumen (código puro)
+   ├─ background/       tarea de Android que recalcula el resumen de madrugada
    ├─ voice.ts          dictado y lectura en voz alta
    ├─ voice-text.ts     correcciones del dictado y texto para voz
    ├─ google/           Calendar y Gmail en solo lectura
