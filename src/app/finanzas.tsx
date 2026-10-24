@@ -2,6 +2,7 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, ScrollView, Text, View } from 'react-native';
 
+import { GoalsCard } from '@/components/finance/goals-card';
 import { Badge, Button, Card, Chip, Divider, Display, Empty, Input, ListItem, MicButton, Muted, Overline, Progress, Row, Screen, Stat, useModule, usePalette, type IconName } from '@/components/ui/kit';
 import { speak, useDictation } from '@/lib/voice';
 import { Font, Spacing, Type } from '@/constants/theme';
@@ -194,6 +195,8 @@ export default function PlataScreen() {
           <Button label="Fijar" icon="target" variant="secondary" onPress={guardarPresupuesto} />
         </Row>
       </Card>
+
+      <GoalsCard />
 
       <Card title="Movimientos del mes" icon="swap-vertical" accent={m.solid} right={<Badge label={String(movs.length)} color={m.solid} />}>
         {movs.length === 0 ? (
