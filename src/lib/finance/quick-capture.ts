@@ -1,4 +1,4 @@
-import { askAi } from '@/lib/ai';
+import { askAi, parseJson } from '@/lib/ai';
 import { CATEGORIAS, CUENTAS, type NewTransaction } from '@/lib/finance/repository';
 
 // Palabras comunes que resuelvo sin IA: rápido y sin gastar batería.
@@ -52,7 +52,7 @@ export async function parseWithAi(texto: string): Promise<NewTransaction> {
     ],
     { privado: true, maxTokens: 120 },
   );
-  const json = JSON.parse(text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1));
+  const json = parseJson(text);
   const monto = Number(json.monto);
   if (!Number.isFinite(monto) || monto <= 0) throw new Error('No encontré el monto');
 
