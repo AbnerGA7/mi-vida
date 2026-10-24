@@ -2,7 +2,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { initLlama, type LlamaContext } from 'llama.rn';
 
 import { LOCAL_MODEL } from '@/lib/config';
-import type { ChatMessage } from '@/lib/ai/types';
+import type { AiOptions, ChatMessage } from '@/lib/ai/types';
 
 const modelPath = `${FileSystem.documentDirectory}${LOCAL_MODEL.file}`;
 let contextPromise: Promise<LlamaContext> | null = null;
@@ -50,8 +50,13 @@ function getContext() {
   return contextPromise;
 }
 
-export async function completeLocal(messages: ChatMessage[], maxTokens = 512) {
+export async function completeLocal(messages: ChatMessage[], { maxTokens = 512, temperature = 0.3, json }: AiOptions = {}) {
   const ctx = await getContext();
-  const result = await ctx.completion({ messages, n_predict: maxTokens, temperature: 0.3 });
+  const result = await ctx.completion({
+    messages,
+    n_predict: maxTokens,
+    temperature,
+    ...(json ? { response_format: { type: 'json_schema' as const, json_schema: { strict: true, schema: json } } } : {}),
+  });
   return result.text.trim();
 }

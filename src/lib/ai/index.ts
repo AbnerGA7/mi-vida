@@ -10,14 +10,14 @@ export type { AiSource, ChatMessage } from '@/lib/ai/types';
 // Si la nube falla (sin cuota, sin señal), caigo a la local sin que el usuario lo note.
 export async function askAi(
   messages: ChatMessage[],
-  { privado = false, maxTokens }: AiOptions = {},
+  options: AiOptions = {},
 ): Promise<{ text: string; source: AiSource }> {
   const net = await NetInfo.fetch();
   const online = Boolean(net.isConnected && net.isInternetReachable !== false);
 
-  if (online && !privado && hasCloudKey()) {
+  if (online && !options.privado && hasCloudKey()) {
     try {
-      return { text: await completeCloud(messages, maxTokens), source: 'nube' };
+      return { text: await completeCloud(messages, options), source: 'nube' };
     } catch {
       // sigo con la local
     }
@@ -26,5 +26,5 @@ export async function askAi(
   if (!(await isLocalModelReady())) {
     throw new Error('Descarga la IA local en Ajustes para usarla sin internet.');
   }
-  return { text: await completeLocal(messages, maxTokens), source: 'local' };
+  return { text: await completeLocal(messages, options), source: 'local' };
 }
