@@ -134,16 +134,17 @@ export default function PlataScreen() {
           <View style={{ flex: 1 }}>
             <Input
               icon="message-text-outline"
+              accent={m.solid}
               value={escuchando ? parcial : texto}
               onChangeText={setTexto}
               onSubmitEditing={() => registrar()}
-              placeholder={escuchando ? 'Te escucho…' : '"25 menú con yape" o "me pagaron 1200"'}
+              placeholder={escuchando ? 'Te escucho…' : '"25 menú con yape"'}
               returnKeyType="done"
             />
           </View>
           <MicButton escuchando={escuchando} color={m.solid} onPress={escuchando ? parar : empezar} />
         </Row>
-        <Button label="Guardar" icon="check" color={m.solid} loading={guardando} onPress={() => registrar()} />
+        <Button label="Guardar movimiento" icon="check" color={m.solid} loading={guardando} onPress={() => registrar()} />
         <Muted size={12}>Lo entiendo al toque; si es raro, lo interpreta la IA local sin salir del celular.</Muted>
       </Card>
 
