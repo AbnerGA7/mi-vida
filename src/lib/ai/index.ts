@@ -4,6 +4,7 @@ import { completeCloud, hasCloudKey } from '@/lib/ai/cloud';
 import { completeLocal, isLocalModelReady } from '@/lib/ai/local';
 import type { AiOptions, AiSource, ChatMessage } from '@/lib/ai/types';
 
+export { prewarmLocal } from '@/lib/ai/local';
 export type { AiSource, ChatMessage } from '@/lib/ai/types';
 
 // Modo híbrido: nube si hay internet y el dato no es privado; si no, IA local.

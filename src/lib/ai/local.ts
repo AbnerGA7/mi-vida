@@ -68,6 +68,12 @@ function getContext() {
   return contextPromise;
 }
 
+// Cargar el modelo tarda unos segundos: lo hago apenas abro una pantalla que lo va a usar,
+// así la primera pregunta responde rápido.
+export async function prewarmLocal() {
+  if (await isLocalModelReady()) await getContext().catch(() => {});
+}
+
 // Qwen a veces sigue escribiendo otro turno; corto en sus marcas de fin.
 const STOP = ['<|im_end|>', '<|endoftext|>', '<|im_start|>'];
 
