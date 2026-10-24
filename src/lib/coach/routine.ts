@@ -108,9 +108,16 @@ const SEGURO: Record<string, string> = {
   hombro: 'Remo en polea',
 };
 
+// Cómo lo suelo escribir: "menisco", "lumbar", "hernia", "manguito rotador"…
+const SINONIMOS: Record<string, string[]> = {
+  rodilla: ['rodilla', 'menisco', 'ligamento cruzado', 'rotula', 'patelar'],
+  espalda: ['espalda', 'lumbar', 'lumbago', 'columna', 'hernia', 'ciatica'],
+  hombro: ['hombro', 'manguito', 'rotador', 'clavicula'],
+};
+
 export function adaptToInjuries(rutina: Rutina, lesiones: string | null): Rutina {
-  const texto = (lesiones ?? '').toLowerCase();
-  const zonas = Object.keys(RIESGO).filter((zona) => texto.includes(zona));
+  const texto = (lesiones ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const zonas = Object.keys(RIESGO).filter((zona) => SINONIMOS[zona].some((p) => texto.includes(p)));
   if (zonas.length === 0) return rutina;
   const evitar = new Set(zonas.flatMap((zona) => RIESGO[zona]));
   const reemplazo = (ej: Ejercicio) => (evitar.has(ej.alternativa) ? SEGURO[zonas[0]] : ej.alternativa);
