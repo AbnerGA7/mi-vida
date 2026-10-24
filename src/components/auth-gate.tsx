@@ -2,14 +2,23 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, type ComponentProps, type ReactNode } from 'react';
+import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Spacing } from '@/constants/theme';
+import { BrandGradient, Font, Spacing, Type } from '@/constants/theme';
 import { useGoogleAuthRequest } from '@/lib/auth/google';
 import { useSession } from '@/lib/session';
 
-const BRAND = ['#14B8A6', '#0F766E', '#0B3B36'] as const;
 
 export function AuthGate({ children }: { children: ReactNode }) {
   const { status } = useSession();
@@ -96,7 +105,13 @@ function LockScreen() {
 
 function Shell({ children }: { children: ReactNode }) {
   return (
-    <LinearGradient colors={BRAND} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+    <LinearGradient colors={BrandGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
+      <StatusBar style="light" />
+      <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+        <View style={[styles.orb, { width: 340, height: 340, top: -120, right: -120 }]} />
+        <View style={[styles.orb, { width: 220, height: 220, bottom: 80, left: -110, opacity: 0.6 }]} />
+        <View style={[styles.orb, { width: 90, height: 90, top: 180, left: 40, backgroundColor: 'rgba(253,176,34,0.18)' }]} />
+      </View>
       <SafeAreaView style={styles.shell}>{children}</SafeAreaView>
     </LinearGradient>
   );
@@ -125,29 +140,36 @@ function ErrorBox({ text }: { text: string }) {
 const styles = StyleSheet.create({
   shell: { flex: 1, padding: Spacing.four, justifyContent: 'space-between' },
   top: { alignItems: 'center', gap: Spacing.two, marginTop: Spacing.six },
-  logo: { width: 112, height: 112, borderRadius: 28, marginBottom: Spacing.two },
+  logo: { width: 108, height: 108, borderRadius: 32, marginBottom: Spacing.three, boxShadow: '0px 18px 40px -10px rgba(0,0,0,0.45)' },
+  orb: { position: 'absolute', borderRadius: 999, backgroundColor: 'rgba(255,255,255,0.07)' },
+  lockWrap: { width: 128, height: 128, alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.three },
+  lockRing: { position: 'absolute', marginBottom: 0, backgroundColor: 'rgba(255,255,255,0.3)' },
   lockCircle: {
     width: 128,
     height: 128,
     borderRadius: 64,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.25)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.two,
   },
-  title: { color: '#FFFFFF', fontSize: 36, fontWeight: '800' },
-  subtitle: { color: 'rgba(255,255,255,0.88)', fontSize: 16, textAlign: 'center', maxWidth: 300 },
+  title: { ...Type.display, color: '#FFFFFF' },
+  subtitle: { ...Type.body, fontSize: 16, lineHeight: 23, color: 'rgba(255,255,255,0.85)', textAlign: 'center', maxWidth: 300 },
   features: { gap: Spacing.three, paddingHorizontal: Spacing.two },
   feature: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   featureIcon: {
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: 'rgba(255,255,255,0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  featureText: { color: '#FFFFFF', fontSize: 15, flex: 1 },
+  featureText: { ...Type.callout, fontSize: 15, color: '#FFFFFF', flex: 1 },
   bottom: { gap: Spacing.three, marginBottom: Spacing.three },
   google: {
     flexDirection: 'row',
@@ -155,13 +177,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: Spacing.two,
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingVertical: 16,
+    borderRadius: 18,
+    paddingVertical: 17,
+    boxShadow: '0px 14px 30px -12px rgba(0,0,0,0.45)',
   },
-  googleLabel: { color: '#0B3B36', fontSize: 17, fontWeight: '800' },
-  note: { color: 'rgba(255,255,255,0.75)', fontSize: 13, textAlign: 'center' },
+  googleLabel: { fontFamily: Font.bold, color: '#0B3B36', fontSize: 16.5 },
+  note: { ...Type.caption, fontSize: 13, color: 'rgba(255,255,255,0.7)', textAlign: 'center' },
   link: { alignItems: 'center', padding: Spacing.two },
-  linkLabel: { color: '#FFFFFF', fontSize: 15, fontWeight: '600', textDecorationLine: 'underline' },
+  linkLabel: { fontFamily: Font.semibold, color: 'rgba(255,255,255,0.85)', fontSize: 15 },
   error: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -170,5 +193,5 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: Spacing.three,
   },
-  errorText: { color: '#FFFFFF', flex: 1 },
+  errorText: { ...Type.callout, color: '#FFFFFF', flex: 1 },
 });
