@@ -158,3 +158,34 @@ describe('clasificación por reglas', () => {
     expect(extractFields(MUESTRAS[0].texto)).toEqual({ placa: 'ABC-123', aseguradora: 'Rímac', poliza: '3921' });
   });
 });
+
+describe('fecha de vencimiento', () => {
+  for (const m of MUESTRAS) {
+    test(`${m.nombre} → ${m.vence}`, () => {
+      const r = classifyByRules(m.nombre, m.texto);
+      expect(findExpiration(m.texto, { vigenciaAnios: r.vigenciaAnios, hoy: HOY })).toBe(m.vence);
+    });
+  }
+
+  test('rechaza fechas que no existen', () => {
+    expect(findDates('31/02/2027 y 30/02/2026')).toEqual([]);
+  });
+
+  test('entiende formatos variados', () => {
+    const f = (t: string) => findDates(t).map((d) => d.fecha);
+    expect(f('2027-03-15')).toEqual(['2027-03-15']);
+    expect(f('15 / 03 / 2027')).toEqual(['2027-03-15']);
+    expect(f('15-MAR-27')).toEqual(['2027-03-15']);
+    expect(f('15 de marzo del 2027')).toEqual(['2027-03-15']);
+    expect(f('15 dic. 2026')).toEqual(['2026-12-15']);
+    expect(f('marzo 15, 2027')).toEqual(['2027-03-15']);
+  });
+
+  test('"vencimiento del SOAT:" no confunde el "del" con una fecha de inicio', () => {
+    expect(findExpiration('Fecha de vencimiento del SOAT: 15/03/2027. Emitido 14/03/2026')).toBe('2027-03-15');
+  });
+
+  test('si solo hay fecha de nacimiento, no hay vencimiento', () => {
+    expect(findExpiration('Fecha de nacimiento 12/05/1998')).toBeNull();
+  });
+});
