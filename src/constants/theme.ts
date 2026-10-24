@@ -58,6 +58,28 @@ export type ModuleKey = keyof typeof ModuleColors;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
+// Plus Jakarta Sans: cada peso es su propia familia (en Android no se debe usar fontWeight con fuentes propias).
+export const Font = {
+  regular: 'PlusJakartaSans_400Regular',
+  medium: 'PlusJakartaSans_500Medium',
+  semibold: 'PlusJakartaSans_600SemiBold',
+  bold: 'PlusJakartaSans_700Bold',
+  extrabold: 'PlusJakartaSans_800ExtraBold',
+} as const;
+
+// Escala tipográfica.
+export const Type = {
+  display: { fontFamily: Font.extrabold, fontSize: 40, lineHeight: 46, letterSpacing: -1.2 },
+  h1: { fontFamily: Font.extrabold, fontSize: 28, lineHeight: 34, letterSpacing: -0.7 },
+  h2: { fontFamily: Font.bold, fontSize: 20, lineHeight: 26, letterSpacing: -0.3 },
+  title: { fontFamily: Font.bold, fontSize: 16, lineHeight: 22, letterSpacing: -0.1 },
+  body: { fontFamily: Font.regular, fontSize: 15, lineHeight: 22 },
+  bodyStrong: { fontFamily: Font.semibold, fontSize: 15, lineHeight: 22 },
+  callout: { fontFamily: Font.medium, fontSize: 14, lineHeight: 20 },
+  caption: { fontFamily: Font.medium, fontSize: 12, lineHeight: 16 },
+  overline: { fontFamily: Font.bold, fontSize: 11, lineHeight: 14, letterSpacing: 1.2, textTransform: 'uppercase' },
+} satisfies Record<string, TextStyle>;
+
 export const Fonts = Platform.select({
   ios: {
     /** iOS `UIFontDescriptorSystemDesignDefault` */
