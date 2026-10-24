@@ -113,3 +113,44 @@ export function fastAnswer<T extends DocLite>(pregunta: string, docs: T[], today
   }
   return null;
 }
+
+// --- Búsqueda para cuando sí necesito a la IA ---
+
+const STOPWORDS = new Set(
+  'que cual cuales cuando como donde quien cuanto cuanta cuantos para por con sin del las los una uno unos unas mis tus sus este esta esto ese esa eso hay tiene tengo tienes dime decir sabes puedes quiero saber cual era fue son ser estar esta mio mia'.split(' '),
+);
+
+// Para que "¿cuánto pago de alquiler?" también encuentre "merced conductiva" o "arrendamiento".
+const SINONIMOS: Record<string, string[]> = {
+  soat: ['soat', 'accidentes'],
+  brevete: ['brevete', 'licencia'],
+  licencia: ['licencia', 'brevete'],
+  alquiler: ['alquiler', 'arrendamiento', 'merced'],
+  renta: ['renta', 'alquiler', 'arrendamiento'],
+  sueldo: ['sueldo', 'remuneracion', 'neto'],
+  seguro: ['seguro', 'poliza'],
+  poliza: ['poliza', 'seguro'],
+  placa: ['placa'],
+  carro: ['vehiculo', 'placa'],
+  auto: ['vehiculo', 'placa'],
+  moto: ['vehiculo', 'placa', 'moto'],
+  luz: ['luz', 'energia', 'kwh'],
+  vence: ['vence', 'vencimiento', 'vigencia', 'hasta', 'caducidad'],
+  vencimiento: ['vencimiento', 'vigencia', 'hasta', 'caducidad'],
+};
+
+export function palabrasClave(pregunta: string) {
+  const palabras = normalize(pregunta).match(/[a-z0-9]{3,}/g) ?? [];
+  const out = new Set<string>();
+  for (const p of palabras) {
+    if (STOPWORDS.has(p)) continue;
+    for (const s of SINONIMOS[p] ?? [p]) out.add(s);
+  }
+  return [...out];
+}
+
+export function toFtsQuery(pregunta: string) {
+  return palabrasClave(pregunta)
+    .map((p) => `"${p}"*`)
+    .join(' OR ');
+}

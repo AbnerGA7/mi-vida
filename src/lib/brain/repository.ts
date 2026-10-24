@@ -1,6 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
 
 import { askAi, type AiSource } from '@/lib/ai';
+import { toFtsQuery } from '@/lib/brain/answer';
 import type { ExtractedDocument } from '@/lib/brain/extract';
 import { getDb } from '@/lib/db';
 
@@ -52,14 +53,6 @@ export async function listDocuments() {
   );
 }
 
-function toFtsQuery(pregunta: string) {
-  const palabras = pregunta
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .match(/[a-z0-9]{3,}/g);
-  return palabras?.map((p) => `"${p}"*`).join(' OR ') ?? '';
-}
 
 export async function searchDocuments(pregunta: string, limit = 5) {
   const query = toFtsQuery(pregunta);
