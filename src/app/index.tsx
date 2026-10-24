@@ -1,6 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { RefreshControl } from 'react-native';
 
 import { Badge, Body, Button, Card, Empty, Icon, Input, ListItem, Muted, Row, Screen, Stat, useModule, usePalette } from '@/components/ui/kit';
@@ -18,6 +18,8 @@ Notifications.setNotificationHandler({
     shouldSetBadge: false,
   }),
 });
+
+const GOOGLE_TTL_MS = 5 * 60 * 1000;
 
 function saludo() {
   const h = new Date().getHours();
@@ -49,27 +51,46 @@ export default function HoyScreen() {
     }
   }, [response, signIn]);
 
-  const cargar = useCallback(async () => {
-    setCargando(true);
-    let ev: Evento[] = [];
-    let co: Correo[] = [];
-    if (accessToken) {
+  // Google tarda y gasta datos (Gmail pide un detalle por correo): al cambiar de pestaña reuso
+  // lo que bajé hace menos de 5 minutos. Deslizar hacia abajo siempre vuelve a pedirlo.
+  const google = useRef<{ token: string | null; at: number; ev: Evento[]; co: Correo[] }>({ token: null, at: 0, ev: [], co: [] });
+
+  const cargarGoogle = useCallback(
+    async (forzar: boolean) => {
+      const cache = google.current;
+      if (!accessToken) return { ev: [], co: [] };
+      if (!forzar && cache.token === accessToken && Date.now() - cache.at < GOOGLE_TTL_MS) return cache;
       try {
-        [ev, co] = await Promise.all([todayEvents(accessToken), importantEmails(accessToken)]);
+        const [ev, co] = await Promise.all([todayEvents(accessToken), importantEmails(accessToken)]);
+        google.current = { token: accessToken, at: Date.now(), ev, co };
         setGoogleError(null);
+        return google.current;
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         setGoogleError(msg === 'TOKEN_EXPIRADO' ? 'Tu conexión con Google venció.' : `No pude leer Google · ${msg}`);
+        return { ev: [], co: [] };
       }
-    }
-    const [t, b] = await Promise.all([upcomingTasks(), buildBrief(ev, co)]);
-    setEventos(ev);
-    setCorreos(co);
-    setTareas(t);
-    setBrief(b);
-    await scheduleMorningBrief(b);
-    setCargando(false);
-  }, [accessToken]);
+    },
+    [accessToken],
+  );
+
+  const cargar = useCallback(
+    async (forzar = false) => {
+      setCargando(true);
+      try {
+        const [{ ev, co }, t] = await Promise.all([cargarGoogle(forzar), upcomingTasks()]);
+        const b = await buildBrief(ev, co, t);
+        setEventos(ev);
+        setCorreos(co);
+        setTareas(t);
+        setBrief(b);
+        await scheduleMorningBrief(b);
+      } finally {
+        setCargando(false);
+      }
+    },
+    [cargarGoogle],
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -95,7 +116,7 @@ export default function HoyScreen() {
       icon="white-balance-sunny"
       title={`${saludo()}${nombre ? `, ${nombre}` : ''}`}
       subtitle={fechaLarga()}
-      refreshControl={<RefreshControl refreshing={cargando} onRefresh={cargar} />}>
+      refreshControl={<RefreshControl refreshing={cargando} onRefresh={() => cargar(true)} />}>
       {brief ? (
         <Card>
           <Row>
@@ -155,8 +176,8 @@ export default function HoyScreen() {
                 iconColor={BUCKET[bucket]}
                 title={`${t.prioridad === 'alta' ? '❗ ' : ''}${t.titulo}`}
                 subtitle={`${bucket}${t.fecha_limite ? ` · ${t.fecha_limite}` : ''}`}
-                onPress={() => toggleTask(t.id).then(cargar)}
-                onLongPress={() => deleteTask(t.id).then(cargar)}
+                onPress={() => toggleTask(t.id).then(() => cargar())}
+                onLongPress={() => deleteTask(t.id).then(() => cargar())}
               />
             );
           })
