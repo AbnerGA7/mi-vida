@@ -134,20 +134,30 @@ src/
 │  ├─ coach.tsx         pantalla Coach
 │  └─ ajustes.tsx       descarga de la IA local, pruebas y cuenta
 ├─ components/
-│  └─ auth-gate.tsx     login con Google y pantalla de bloqueo
+│  ├─ auth-gate.tsx     login con Google y pantalla de bloqueo
+│  ├─ ui/kit.tsx        kit de UI (pantalla, tarjetas, botones, textos…)
+│  ├─ ui/bar-chart.tsx  gráfica de barras animada
+│  ├─ finance/          tarjetas de metas de ahorro y pagos fijos
+│  └─ coach/            tarjeta de progreso
+├─ constants/theme.ts   sistema de diseño: colores, tipografía, radios, sombras y movimiento
+├─ types/css.d.ts       tipos de las hojas CSS de la versión web
 └─ lib/
    ├─ config.ts         correo permitido, modelos y llaves
    ├─ session.tsx       sesión y bloqueo automático
    ├─ secure-store.ts   sesión y llave de cifrado
    ├─ tasks.ts          tareas con fechas en lenguaje natural
    ├─ brief.ts          resumen del día y notificación de las 7 am
+   ├─ voice.ts          dictado y lectura en voz alta
+   ├─ voice-text.ts     correcciones del dictado y texto para voz
    ├─ google/           Calendar y Gmail en solo lectura
    ├─ auth/             Google y biometría
-   ├─ db/               SQLite cifrado y migraciones
+   ├─ db/               SQLite cifrado y migraciones (v1-v6)
    ├─ ai/               IA local, nube y modo híbrido
-   ├─ finance/          presupuestos, consultas y registro rápido
-   ├─ brain/            escaneo, OCR, fechas y preguntas a mis documentos
-   └─ coach/            macros, rutinas, reglas de ajuste y menú
+   ├─ finance/          presupuestos, registro rápido, boletas, pagos fijos y metas
+   ├─ brain/            escaneo, OCR, clasificación, fechas, respuestas rápidas y avisos
+   └─ coach/            macros, rutinas, ajustes, progreso, recordatorio y menú
+plugins/
+└─ with-fast-gradle.js  ajustes de Gradle para compilar más rápido
 ```
 
 ## 🛣️ Hoja de ruta
