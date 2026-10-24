@@ -582,6 +582,8 @@ export function Progress({ value, color, height = 8, track }: { value: number; c
   return (
     <View
       onLayout={(e) => setW(e.nativeEvent.layout.width)}
+      accessibilityRole="progressbar"
+      accessibilityValue={{ min: 0, max: 100, now: Math.round(target * 100) }}
       style={{ height, borderRadius: height, backgroundColor: track ?? p.backgroundSelected, overflow: 'hidden' }}>
       <Animated.View style={[{ height, borderRadius: height, overflow: 'hidden' }, fill]}>
         <LinearGradient colors={[color, shade(color, 0.12)]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
