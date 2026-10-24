@@ -166,19 +166,33 @@ export default function PlataScreen() {
           ))
         )}
 
+        <Divider />
+        <Overline>Nuevo presupuesto</Overline>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: Spacing.two }}>
           {CATEGORIAS.map((cat) => (
-            <Chip key={cat} label={cat} selected={cat === catPresupuesto} color={m.solid} onPress={() => setCatPresupuesto(cat)} />
+            <Chip
+              key={cat}
+              label={cat}
+              icon={ICONO_CATEGORIA[cat]}
+              selected={cat === catPresupuesto}
+              color={m.solid}
+              onPress={() => setCatPresupuesto(cat)}
+            />
           ))}
         </ScrollView>
-        <Input
-          icon="cash"
-          value={montoPresupuesto}
-          onChangeText={setMontoPresupuesto}
-          placeholder="Monto mensual S/"
-          keyboardType="decimal-pad"
-        />
-        <Button label={`Fijar presupuesto de ${catPresupuesto}`} icon="target" variant="secondary" onPress={guardarPresupuesto} />
+        <Row>
+          <View style={{ flex: 1 }}>
+            <Input
+              icon="cash"
+              accent={m.solid}
+              value={montoPresupuesto}
+              onChangeText={setMontoPresupuesto}
+              placeholder="Monto mensual S/"
+              keyboardType="decimal-pad"
+            />
+          </View>
+          <Button label="Fijar" icon="target" variant="secondary" onPress={guardarPresupuesto} />
+        </Row>
       </Card>
 
       <Card title="Movimientos del mes" icon="swap-vertical" accent={m.solid} right={<Badge label={String(movs.length)} color={m.solid} />}>
