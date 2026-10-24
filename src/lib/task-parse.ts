@@ -41,10 +41,19 @@ export function parseTask(texto: string, today = new Date()) {
 
   if (!fecha) {
     const m = t.match(/\b(\d{1,2})\/(\d{1,2})\b/);
-    if (m) {
-      fecha = new Date(base.getFullYear(), Number(m[2]) - 1, Number(m[1]));
-      if (fecha < base) fecha.setFullYear(fecha.getFullYear() + 1);
-      t = t.replace(m[0], '');
+    const dia = Number(m?.[1]);
+    const mes = Number(m?.[2]) - 1;
+    // Date corre los días que sobran ("31/02" sería 3 de marzo): solo acepto fechas que existen.
+    const existe = (y: number) => new Date(y, mes, dia).getMonth() === mes;
+    if (m && mes >= 0 && mes < 12 && dia >= 1) {
+      let y = base.getFullYear();
+      if (new Date(y, mes, dia) < base) y++;
+      // El 29/02 solo existe en bisiestos: busco el próximo que lo tenga.
+      for (let i = 0; i < 4 && !existe(y); i++) y++;
+      if (existe(y)) {
+        fecha = new Date(y, mes, dia);
+        t = t.replace(m[0], '');
+      }
     }
   }
 

@@ -29,6 +29,15 @@ describe('tareas en lenguaje natural', () => {
     expect(parseTask('cumple de Ana 05/11', HOY).fecha_limite).toBe('2026-11-05');
   });
 
+  test('una fecha imposible no se inventa y queda en el título', () => {
+    expect(parseTask('versión 31/02', HOY)).toMatchObject({ titulo: 'versión 31/02', fecha_limite: null });
+    expect(parseTask('ganar 45/13', HOY).fecha_limite).toBeNull();
+  });
+
+  test('el 29/02 va al próximo año bisiesto', () => {
+    expect(parseTask('aniversario 29/02', HOY).fecha_limite).toBe('2028-02-29');
+  });
+
   test('sin fecha ni prioridad queda como tarea media sin fecha', () => {
     expect(parseTask('  leer   un libro ', HOY)).toEqual({ titulo: 'leer un libro', fecha_limite: null, prioridad: 'media' });
   });
