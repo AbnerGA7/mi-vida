@@ -21,6 +21,7 @@ Mi app personal para ordenar mi vida desde el celular: **mi plata, mi cuerpo, mi
 ## 🏠 Panel de vida (pestaña Hoy)
 
 - **Agenda de hoy** desde Google Calendar y **correos importantes sin leer** de las últimas 48 h desde Gmail, todo en solo lectura.
+- **Pregúntame lo que sea:** el asistente central decide en código a qué módulo va la pregunta y responde con mis datos ("¿cuánto gasté en comida?", "¿qué pagos tengo esta semana?", "¿qué rutina me toca?", "¿cuándo vence mi SOAT?"). Lo que no reconoce lo contesta la IA local con el resumen del día. También se le puede hablar.
 - **Tareas en una línea** con fechas en lenguaje natural, entendidas en código: "pagar luz el viernes!" crea la tarea para el próximo viernes con prioridad alta. También entiende "hoy", "mañana", "pasado mañana" y "15/03".
 - **Resumen matutino:** junta mi agenda, tareas, presupuestos en riesgo, pagos fijos de los próximos 3 días, documentos por vencer y el gym de hoy. Llega como **notificación a las 7:00**.
   - Solo se reprograma si el texto cambió (guardo la huella SHA-256), y Google se reusa por 5 minutos al cambiar de pestaña; deslizar hacia abajo siempre recarga.
@@ -138,7 +139,8 @@ src/
 │  ├─ ui/kit.tsx        kit de UI (pantalla, tarjetas, botones, textos…)
 │  ├─ ui/bar-chart.tsx  gráfica de barras animada
 │  ├─ finance/          tarjetas de metas de ahorro y pagos fijos
-│  └─ coach/            tarjeta de progreso
+│  ├─ coach/            tarjeta de progreso
+│  └─ assistant/        tarjeta del asistente central
 ├─ constants/theme.ts   sistema de diseño: colores, tipografía, radios, sombras y movimiento
 ├─ types/css.d.ts       tipos de las hojas CSS de la versión web
 └─ lib/
@@ -155,7 +157,8 @@ src/
    ├─ ai/               IA local, nube y modo híbrido
    ├─ finance/          presupuestos, registro rápido, boletas, pagos fijos y metas
    ├─ brain/            escaneo, OCR, clasificación, fechas, respuestas rápidas y avisos
-   └─ coach/            macros, rutinas, ajustes, progreso, recordatorio y menú
+   ├─ coach/            macros, rutinas, ajustes, progreso, recordatorio y menú
+   └─ assistant/        asistente central: enrutador y respuestas de los 4 módulos
 plugins/
 └─ with-fast-gradle.js  ajustes de Gradle para compilar más rápido
 ```
@@ -173,4 +176,4 @@ plugins/
 - [x] Coach v2 (gráficas de progreso y recordatorio semanal)
 - [x] Panel de vida v1 (agenda, correos, tareas y resumen a las 7 am)
 - [ ] Resumen que se recalcula en segundo plano antes de las 7 am
-- [ ] Asistente central: un chat que consulta los 4 módulos
+- [x] Asistente central: un chat que consulta los 4 módulos
