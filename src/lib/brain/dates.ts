@@ -7,9 +7,11 @@ const MESES: Record<string, number> = {
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
+// Solo acepto fechas que existen de verdad (nada de 31/02) y en un rango de años razonable.
 function iso(y: number, m: number, d: number) {
-  if (y < 100) y += 2000;
-  if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+  if (y < 100) y += y > 70 ? 1900 : 2000;
+  if (y < 1900 || y > 2100 || m < 1 || m > 12 || d < 1) return null;
+  if (d > new Date(Date.UTC(y, m, 0)).getUTCDate()) return null;
   return `${y}-${pad(m)}-${pad(d)}`;
 }
 
