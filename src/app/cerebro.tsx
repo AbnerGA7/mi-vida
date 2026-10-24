@@ -5,7 +5,7 @@ import { ActivityIndicator, Alert, View } from 'react-native';
 import { Badge, Body, Button, Card, Empty, Input, ListItem, MicButton, Muted, Row, Screen, useModule, usePalette, type IconName } from '@/components/ui/kit';
 import { prewarmLocal } from '@/lib/ai';
 import { speak, stopSpeaking, useDictation } from '@/lib/voice';
-import { daysUntil } from '@/lib/brain/dates';
+import { daysUntil, formatFecha } from '@/lib/brain/dates';
 import {
   extractFromStored,
   mimeFromPath,
@@ -76,7 +76,7 @@ export default function CerebroScreen() {
     if (dias < 0) return { texto: `Venció hace ${-dias} días`, color: p.danger };
     if (dias === 0) return { texto: 'Vence hoy', color: p.danger };
     if (dias <= 30) return { texto: `Vence en ${dias} días`, color: p.warning };
-    return { texto: `Vence el ${fecha}`, color: p.textSecondary };
+    return { texto: `Vence el ${fecha.split('-').reverse().join('/')}`, color: p.textSecondary };
   }
 
   async function agregar(obtener: () => Promise<PickedFile | null>) {
@@ -131,7 +131,7 @@ export default function CerebroScreen() {
       Alert.alert(
         nuevo.texto.trim() ? 'Documento leído' : 'Sigo sin poder leerlo',
         nuevo.texto.trim()
-          ? `${nuevo.categoria}${nuevo.fecha_vencimiento ? ` · vence ${nuevo.fecha_vencimiento}` : ''}`
+          ? `${nuevo.categoria}${nuevo.fecha_vencimiento ? ` · vence el ${formatFecha(nuevo.fecha_vencimiento)}` : ''}`
           : 'Prueba escaneándolo con la cámara con buena luz.',
       );
     } catch (e) {
