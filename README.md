@@ -31,6 +31,9 @@ Mi app personal para ordenar mi vida desde el celular: **mi plata, mi cuerpo, mi
 
 - **Registro en una línea:** escribo "25 menú con yape" o "me pagaron 1200". Lo común se entiende al toque con palabras clave; lo raro lo interpreta la IA **local** (mis finanzas nunca salen del celular).
 - **Presupuestos con semáforo:** 🟢 vas bien, 🟡 en riesgo (gastas más rápido que el avance del mes), 🔴 excedido. También muestra la proyección al cierre del mes.
+- **Boletas con la cámara:** le tomo foto a la boleta y leo en código el total (no el subtotal ni el IGV), el comercio, la fecha y la categoría por tienda (Tottus, Inkafarma, Primax…). Me pide confirmar antes de guardar y la foto se borra.
+- **Pagos fijos:** alquiler, luz o tarjeta con su día del mes. Me avisa **la noche anterior y la mañana del día**, y muestra cuánto vence esta semana.
+- **Metas de ahorro:** cuánto llevo, cuánto falta y **cuánto guardar al mes** para llegar a la fecha. Toco una meta para abonar o retirar.
 - **Movimientos del mes:** mantengo presionado uno para borrarlo.
 - Todas las cuentas se hacen **en código**, no con la IA.
 
