@@ -53,6 +53,16 @@ export const CUENTA_ALIAS: Record<string, Cuenta> = {
   plin: 'plin', debito: 'debito', credito: 'credito', visa: 'credito', mastercard: 'credito',
 };
 
+// La cuenta con la que pagué o me pagaron: también entiende "yapeé", "me yapearon" o "pliné".
+export function findCuenta(words: string[]): Cuenta {
+  for (const w of words) {
+    if (CUENTA_ALIAS[w]) return CUENTA_ALIAS[w];
+    if (w.startsWith('yape')) return 'yape';
+    if (w.startsWith('plin')) return 'plin';
+  }
+  return 'efectivo';
+}
+
 const INGRESO_RE = /\b(cobre|me pagaron|me depositaron|me yapearon|me plinearon|sueldo|salario|ingreso|gane|recibi|me devolvieron|propina|venta|vendi|freelance|quincena)\b/;
 
 export function today() {
@@ -99,7 +109,7 @@ export function parseSimple(texto: string): NewTransaction | null {
   if (!monto) return null;
 
   const words = lower.split(/[^a-z0-9]+/).filter(Boolean);
-  const cuenta = words.map((w) => CUENTA_ALIAS[w]).find(Boolean) ?? 'efectivo';
+  const cuenta = findCuenta(words);
 
   if (INGRESO_RE.test(lower)) {
     return { fecha: today(), monto, tipo: 'ingreso', descripcion: texto.trim(), categoria: 'otros', cuenta };
