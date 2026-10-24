@@ -1,7 +1,7 @@
 // Pruebas de los pagos fijos. Correr con: bun test
 import { describe, expect, test } from 'bun:test';
 
-import { nextDueDate, upcomingPayments, type Payment } from '@/lib/finance/payments';
+import { nextDueDate, planPaymentReminders, upcomingPayments, type Payment } from '@/lib/finance/payments';
 
 const HOY = new Date(2026, 9, 24); // 24 de octubre de 2026
 
@@ -40,5 +40,26 @@ describe('pagos fijos', () => {
       ['Luz', 2],
       ['Alquiler', 8],
     ]);
+  });
+});
+
+describe('avisos de pago', () => {
+  const AHORA = new Date(2026, 9, 24, 12, 0);
+
+  test('aviso la víspera y el mismo día de los dos próximos vencimientos', () => {
+    const avisos = planPaymentReminders([{ id: 1, nombre: 'Luz', monto: 80, dia: 28 }], AHORA);
+    expect(avisos.map((a) => [a.cuando.getMonth() + 1, a.cuando.getDate(), a.cuando.getHours()])).toEqual([
+      [10, 27, 19],
+      [10, 28, 9],
+      [11, 27, 19],
+      [11, 28, 9],
+    ]);
+    expect(avisos[0].titulo).toBe('💳 Mañana pagas Luz');
+  });
+
+  test('si hoy vence y ya pasó la mañana, solo quedan los del mes siguiente', () => {
+    const avisos = planPaymentReminders([{ id: 2, nombre: 'Tarjeta', monto: 300, dia: 24 }], AHORA);
+    expect(avisos[0].cuando.getMonth()).toBe(10);
+    expect(avisos).toHaveLength(2);
   });
 });
