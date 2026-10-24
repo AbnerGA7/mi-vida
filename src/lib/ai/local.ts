@@ -6,6 +6,8 @@ import type { AiOptions, ChatMessage } from '@/lib/ai/types';
 
 const modelPath = `${FileSystem.documentDirectory}${LOCAL_MODEL.file}`;
 let contextPromise: Promise<LlamaContext> | null = null;
+// El contexto de llama atiende una respuesta a la vez: encolo las demás en vez de chocarlas.
+let queue: Promise<unknown> = Promise.resolve();
 
 export async function isLocalModelReady() {
   return (await FileSystem.getInfoAsync(modelPath)).exists;
@@ -33,6 +35,8 @@ export async function downloadLocalModel(onProgress?: (fraction: number) => void
 }
 
 export async function deleteLocalModel() {
+  // Espero que termine la respuesta en curso antes de soltar el modelo.
+  await queue;
   if (contextPromise) {
     await (await contextPromise).release();
     contextPromise = null;
@@ -61,17 +65,21 @@ function getContext() {
 // Qwen a veces sigue escribiendo otro turno; corto en sus marcas de fin.
 const STOP = ['<|im_end|>', '<|endoftext|>', '<|im_start|>'];
 
-export async function completeLocal(messages: ChatMessage[], { maxTokens = 512, temperature = 0.3, json }: AiOptions = {}) {
-  const ctx = await getContext();
-  const result = await ctx.completion({
-    messages,
-    n_predict: maxTokens,
-    temperature,
-    top_p: 0.9,
-    // Qwen 2.5 repite frases si no lo freno un poco.
-    penalty_repeat: 1.1,
-    stop: STOP,
-    ...(json ? { response_format: { type: 'json_schema' as const, json_schema: { strict: true, schema: json } } } : {}),
+export function completeLocal(messages: ChatMessage[], { maxTokens = 512, temperature = 0.3, json }: AiOptions = {}) {
+  const run = queue.then(async () => {
+    const ctx = await getContext();
+    const result = await ctx.completion({
+      messages,
+      n_predict: maxTokens,
+      temperature,
+      top_p: 0.9,
+      // Qwen 2.5 repite frases si no lo freno un poco.
+      penalty_repeat: 1.1,
+      stop: STOP,
+      ...(json ? { response_format: { type: 'json_schema' as const, json_schema: { strict: true, schema: json } } } : {}),
+    });
+    return result.text.trim();
   });
-  return result.text.trim();
+  queue = run.catch(() => {});
+  return run;
 }
