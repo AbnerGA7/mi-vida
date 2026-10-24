@@ -7,19 +7,10 @@ import PdfThumbnail from 'react-native-pdf-thumbnail';
 
 import { askAi } from '@/lib/ai';
 import { extractPdfTextCloud, hasCloudKey } from '@/lib/ai/cloud';
+import { CATEGORIAS_DOC } from '@/lib/brain/classify';
 import { findExpiration } from '@/lib/brain/dates';
 
-export const CATEGORIAS_DOC = [
-  'Seguros',
-  'Contratos',
-  'Identidad y trámites',
-  'Salud',
-  'Vehículos',
-  'Hogar',
-  'Finanzas e impuestos',
-  'Estudios',
-  'Notas personales',
-] as const;
+export { CATEGORIAS_DOC } from '@/lib/brain/classify';
 
 export type PickedFile = { uri: string; nombre: string; mime: string };
 
