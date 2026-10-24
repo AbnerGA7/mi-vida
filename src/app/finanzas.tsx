@@ -148,26 +148,21 @@ export default function PlataScreen() {
         <Muted size={12}>Lo entiendo al toque; si es raro, lo interpreta la IA local sin salir del celular.</Muted>
       </Card>
 
-      <Card title="Presupuestos" icon="chart-donut" accent={m.solid}>
+      <Card title="Presupuestos" subtitle="Semáforo según el avance del mes" icon="chart-donut" accent={m.solid}>
         {budgets.length === 0 ? (
-          <Empty icon="chart-donut" text="Aún no defines presupuestos. Elige una categoría abajo." />
+          <Empty icon="chart-donut" color={m.solid} text="Aún no defines presupuestos. Elige una categoría abajo." />
         ) : (
           budgets.map((b) => (
-            <ListItem
-              key={b.categoria}
-              icon={ICONO_CATEGORIA[b.categoria] ?? 'tag-outline'}
-              iconColor={ESTADO_COLOR[b.estado]}
-              title={b.categoria.charAt(0).toUpperCase() + b.categoria.slice(1)}
-              right={<Badge label={ESTADO_LABEL[b.estado]} color={ESTADO_COLOR[b.estado]} />}
-              subtitle={
-                <>
-                  <Progress value={b.porcentaje} color={ESTADO_COLOR[b.estado]} />
-                  <Muted size={12}>
-                    {formatSoles(b.gastado)} de {formatSoles(b.presupuesto)} · al cierre {formatSoles(b.proyeccion)}
-                  </Muted>
-                </>
-              }
-            />
+            <View key={b.categoria} style={{ gap: Spacing.two }}>
+              <ListItem
+                icon={ICONO_CATEGORIA[b.categoria] ?? 'tag-outline'}
+                iconColor={ESTADO_COLOR[b.estado]}
+                title={b.categoria.charAt(0).toUpperCase() + b.categoria.slice(1)}
+                subtitle={`${formatSoles(b.gastado)} de ${formatSoles(b.presupuesto)} · al cierre ${formatSoles(b.proyeccion)}`}
+                right={<Badge label={ESTADO_LABEL[b.estado]} color={ESTADO_COLOR[b.estado]} />}
+              />
+              <Progress value={b.porcentaje} color={ESTADO_COLOR[b.estado]} />
+            </View>
           ))
         )}
 
