@@ -55,6 +55,15 @@ describe('rutina', () => {
     expect(nombres('Rótula')).not.toContain('Zancadas');
   });
 
+  test('la alternativa de un ejercicio cambiado nunca es uno riesgoso', () => {
+    const r = adaptToInjuries(buildRoutine(4), 'rodilla y espalda');
+    const riesgosos = ['Sentadilla', 'Zancadas', 'Sentadilla búlgara', 'Peso muerto rumano', 'Remo con barra'];
+    for (const ej of r.sesiones.flatMap((s) => s.ejercicios)) {
+      expect(riesgosos).not.toContain(ej.nombre);
+      expect(riesgosos).not.toContain(ej.alternativa);
+    }
+  });
+
   test('sin lesiones la rutina queda igual', () => {
     const r = buildRoutine(4);
     expect(adaptToInjuries(r, null)).toBe(r);
