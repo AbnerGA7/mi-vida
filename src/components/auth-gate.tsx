@@ -90,9 +90,7 @@ function LockScreen() {
   return (
     <Shell>
       <Animated.View entering={FadeInDown.delay(80).springify().damping(18)} style={styles.top}>
-        <View style={styles.lockCircle}>
-          <MaterialCommunityIcons name="fingerprint" size={64} color="#FFFFFF" />
-        </View>
+        <PulsingFingerprint />
         <Text style={styles.title}>Hola{user?.name ? `, ${user.name.split(' ')[0]}` : ''}</Text>
         <Text style={styles.subtitle}>{user?.email}</Text>
       </Animated.View>
@@ -108,6 +106,26 @@ function LockScreen() {
         {error ? <ErrorBox text={error} /> : null}
       </Animated.View>
     </Shell>
+  );
+}
+
+// Huella con ondas suaves que invitan a tocar el sensor.
+function PulsingFingerprint() {
+  const t = useSharedValue(0);
+  useEffect(() => {
+    t.value = withRepeat(withTiming(1, { duration: 1800 }), -1, false);
+  }, [t]);
+  const ring = useAnimatedStyle(() => ({
+    opacity: interpolate(t.value, [0, 1], [0.35, 0]),
+    transform: [{ scale: interpolate(t.value, [0, 1], [1, 1.5]) }],
+  }));
+  return (
+    <View style={styles.lockWrap}>
+      <Animated.View style={[styles.lockCircle, styles.lockRing, ring]} />
+      <View style={styles.lockCircle}>
+        <MaterialCommunityIcons name="fingerprint" size={64} color="#FFFFFF" />
+      </View>
+    </View>
   );
 }
 
@@ -161,7 +179,6 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.25)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.two,
   },
   title: { ...Type.display, color: '#FFFFFF' },
   subtitle: { ...Type.body, fontSize: 16, lineHeight: 23, color: 'rgba(255,255,255,0.85)', textAlign: 'center', maxWidth: 300 },
