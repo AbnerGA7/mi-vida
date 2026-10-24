@@ -43,6 +43,19 @@ categoria debe ser una de: ${CATEGORIAS.join(', ')}.
 cuenta debe ser una de: ${CUENTAS.join(', ')} (si no se dice, "efectivo").
 No des consejos de inversión.`;
 
+// Con este esquema la IA local no puede inventar categorías ni dejar el JSON a medias.
+const SCHEMA = {
+  type: 'object',
+  properties: {
+    monto: { type: 'number' },
+    tipo: { type: 'string', enum: ['gasto', 'ingreso'] },
+    categoria: { type: 'string', enum: [...CATEGORIAS] },
+    cuenta: { type: 'string', enum: [...CUENTAS] },
+    descripcion: { type: 'string' },
+  },
+  required: ['monto', 'tipo', 'categoria', 'cuenta', 'descripcion'],
+};
+
 export async function parseWithAi(texto: string): Promise<NewTransaction> {
   // Finanzas siempre en modo privado: el texto no sale del celular.
   const { text } = await askAi(
@@ -50,7 +63,7 @@ export async function parseWithAi(texto: string): Promise<NewTransaction> {
       { role: 'system', content: SYSTEM },
       { role: 'user', content: texto },
     ],
-    { privado: true, maxTokens: 120 },
+    { privado: true, maxTokens: 120, temperature: 0, json: SCHEMA },
   );
   const json = parseJson(text);
   const monto = Number(json.monto);
