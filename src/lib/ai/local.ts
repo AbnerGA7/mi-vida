@@ -49,6 +49,10 @@ function getContext() {
     n_gpu_layers: 99,
     // Mantengo el modelo en RAM mapeado: la segunda pregunta ya no vuelve a leerlo del disco.
     use_mmap: true,
+  }).catch((e) => {
+    // Si falló al cargar, la próxima vez lo intento de nuevo en vez de quedarme con el error.
+    contextPromise = null;
+    throw e;
   });
   return contextPromise;
 }
