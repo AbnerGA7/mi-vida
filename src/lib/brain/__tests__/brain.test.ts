@@ -247,3 +247,17 @@ describe('preguntas', () => {
     expect(p.length).toBeLessThanOrEqual(300);
   });
 });
+
+describe('voz', () => {
+  test('corrige lo que el dictado entiende mal', () => {
+    expect(fixDictation('cuándo vence mi so at')).toBe('cuándo vence mi SOAT');
+    expect(fixDictation('hasta cuándo es mi d n i')).toBe('hasta cuándo es mi DNI');
+  });
+
+  test('lee fechas y montos como una persona', () => {
+    expect(textoParaVoz('Vence el 2027-03-15. Fuente: [1] SOAT')).toBe('Vence el 15 de marzo de 2027.');
+    expect(textoParaVoz('La merced es **S/ 1,200.00** [1]')).toBe('La merced es 1200 soles');
+    expect(textoParaVoz('Precio S/ 95.50')).toBe('Precio 95 soles con 50 céntimos');
+    expect(textoParaVoz('Póliza ···3921')).toBe('Póliza que termina en 3 9 2 1');
+  });
+});
