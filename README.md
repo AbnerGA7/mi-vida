@@ -40,11 +40,13 @@ Mi app personal para ordenar mi vida desde el celular: **mi plata, mi cuerpo, mi
 ## 🧠 Segundo cerebro
 
 - **Escaneo con la cámara** o subo una imagen, texto o PDF. El texto se lee con **OCR de ML Kit dentro del celular**.
-- La **IA local** lo clasifica (Seguros, Contratos, Identidad, Salud, Vehículos…) y escribe un resumen de una línea.
-- La **fecha de vencimiento** se detecta en código (formatos `15/03/2027`, `2027-03-15` y "31 de diciembre de 2026"), priorizando la que aparece cerca de "vence", "vigencia" o "hasta".
-- **Preguntas con fuente:** busco con FTS5 los documentos más relevantes y la IA responde citando de cuál sacó el dato. Si no está, me dice qué subir.
-- **Alertas** de lo vencido o lo que vence en menos de 30 días.
-- Los archivos se guardan en el almacenamiento privado de la app, no en la galería. Los PDF se guardan pero aún no se leen: para eso los escaneo.
+- **Clasificación por reglas primero:** unos 30 tipos de documento peruanos (SOAT, brevete, DNI, contratos, recibos, SUNAT…) se reconocen en código al instante. Solo si las reglas dudan entra la **IA local**, con un esquema JSON que no la deja inventar categorías. Los escaneos se renombran con su tipo ("SOAT 24/10/2026").
+- La **fecha de vencimiento** se detecta en código: `15/03/2027`, `2027-03-15`, `15-MAR-2027`, "31 de dic. 2026", "marzo 15, 2027", y corrijo errores típicos del OCR ("2O27"). Cada fecha recibe un puntaje según las palabras cercanas ("vence", "hasta" suman; "emisión", "nacimiento" restan). Si solo encuentro el inicio y sé cuánto dura (el SOAT, 1 año), calculo el fin.
+- **Respuestas al instante:** "¿cuándo vence mi SOAT?", "¿está vigente mi brevete?", "¿qué vence pronto?" se responden en código con la fecha guardada, sin IA.
+- **Preguntas con fuente:** para lo demás busco con FTS5 (con sinónimos y más peso al nombre) y le paso a la IA solo los trozos relevantes; la respuesta aparece mientras se escribe y cita de dónde sacó el dato.
+- **Alertas** de lo vencido o lo que vence en menos de 30 días, y **notificaciones 30, 7 y 1 día antes** de cada vencimiento.
+- **PDF:** cada página se convierte en imagen y pasa por el OCR dentro del celular; si casi no sale texto, me pregunta si puede leerlo con Gemini.
+- Los archivos se guardan en el almacenamiento privado de la app, no en la galería.
 
 ## 💪 Coach de gym y alimentación
 
