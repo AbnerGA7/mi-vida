@@ -9,6 +9,7 @@ import { speak, useDictation } from '@/lib/voice';
 import { Font, Spacing, Type } from '@/constants/theme';
 import { formatSoles, summarizeBudgets, type CategoryBudget } from '@/lib/finance/budget';
 import { quickCapture } from '@/lib/finance/quick-capture';
+import { scanReceipt } from '@/lib/finance/receipt-scan';
 import {
   addTransaction,
   CATEGORIAS,
@@ -85,6 +86,28 @@ export default function PlataScreen() {
     }
   }
 
+  // Leo la boleta con la cámara y pido confirmación antes de guardar: el OCR puede equivocarse.
+  async function escanearBoleta() {
+    setGuardando(true);
+    try {
+      const mov = await scanReceipt();
+      if (mov === 'cancelado') return;
+      if (!mov) {
+        Alert.alert('No encontré el total', 'Toma la foto de frente, con buena luz y que se vea la línea TOTAL.');
+        return;
+      }
+      Alert.alert('¿Guardo este gasto?', `${mov.descripcion}\n${formatSoles(mov.monto)} · ${mov.categoria} · ${mov.fecha}`, [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Corregir', onPress: () => setTexto(`${mov.monto} ${mov.descripcion}`) },
+        { text: 'Guardar', onPress: () => addTransaction(mov).then(cargar) },
+      ]);
+    } catch (e) {
+      Alert.alert('No pude leer la boleta', e instanceof Error ? e.message : String(e));
+    } finally {
+      setGuardando(false);
+    }
+  }
+
   async function guardarPresupuesto() {
     const monto = Number(montoPresupuesto.replace(',', '.'));
     if (!Number.isFinite(monto) || monto <= 0) return;
@@ -146,7 +169,10 @@ export default function PlataScreen() {
           </View>
           <MicButton escuchando={escuchando} color={m.solid} onPress={escuchando ? parar : empezar} />
         </Row>
-        <Button label="Guardar movimiento" icon="check" color={m.solid} loading={guardando} onPress={() => registrar()} />
+        <Row>
+          <Button label="Guardar movimiento" icon="check" color={m.solid} loading={guardando} onPress={() => registrar()} style={{ flex: 1 }} />
+          <Button label="Boleta" icon="receipt-text-outline" variant="secondary" disabled={guardando} onPress={escanearBoleta} />
+        </Row>
         <Muted size={12}>Lo entiendo al toque; si es raro, lo interpreta la IA local sin salir del celular.</Muted>
       </Card>
 
