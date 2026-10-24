@@ -5,13 +5,14 @@
 //    (y en ese caso respondo con la IA local); lo general va a la nube y vuela.
 
 import { askAi, type AiSource, type ChatMessage } from '@/lib/ai';
+import { esRegistroDePlata, RE_DOCS, RE_PLATA, sinTildes, sinVerboDeGasto, textoDeTarea } from '@/lib/assistant/intent';
 import { getAiPrefs } from '@/lib/ai/prefs';
 import { daysUntil } from '@/lib/brain/dates';
 import { askDocuments, listDocuments } from '@/lib/brain/repository';
 import { getProfile } from '@/lib/coach/repository';
 import { adaptToInjuries, buildRoutine, todaySession } from '@/lib/coach/routine';
 import { formatSoles, summarizeBudgets } from '@/lib/finance/budget';
-import { parseSimple, quickCapture } from '@/lib/finance/quick-capture';
+import { quickCapture } from '@/lib/finance/quick-capture';
 import {
   addTransaction,
   deleteTransaction,
@@ -43,27 +44,8 @@ export type AssistantOptions = {
   signal?: AbortSignal;
 };
 
-const sinTildes = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-
-// ---------- Detección de intención (en código) ----------
-
-const RE_GASTO = /^(gaste|pague|compre|anota|anotame|registra|registrame|apunta|me cobraron)\b/;
-const RE_INGRESO = /^(me pagaron|cobre|me depositaron|me yapearon|me plinearon|recibi|gane|me devolvieron)\b/;
-const RE_TAREA = /^(recuerdame|recordarme|recordatorio|tarea|nueva tarea|agrega tarea|anota tarea|tengo que|no olvidar|no me olvide de|pendiente)\b[:,]?\s*/;
-const RE_DOCS = /\b(soat|dni|pasaporte|brevete|licencia|poliza|seguro|contrato|documento|documentos|vence|vencimiento|vigencia|tarjeta de propiedad|revision tecnica|certificado|recibo)\b/;
-const RE_PLATA = /\b(plata|dinero|gasto|gaste|gastos|gastando|ahorro|ahorrar|presupuesto|presupuestos|balance|ingreso|ingresos|sueldo|soles|deuda|deudas|yape|plin|tarjeta|cuanto llevo|finanzas|mes|economia|comida|transporte)\b/;
-
-function esRegistroDePlata(t: string) {
-  const s = sinTildes(t.trim());
-  if (!/\d/.test(s)) return false;
-  // "gasté 25 en menú", "me pagaron 1200", o directamente "25 menú con yape" (si reconozco la categoría).
-  if (RE_GASTO.test(s) || RE_INGRESO.test(s)) return true;
-  return /^\s*(s\/\.?\s*)?\d+([.,]\d+)?\s+[a-z]/.test(s) && !s.includes('?') && parseSimple(t) !== null;
-}
-
 async function registrarPlata(texto: string): Promise<Mensaje> {
-  const limpio = texto.replace(/^(gast[eé]|pagu[eé]|compr[eé]|anota(me)?|registra(me)?|apunta)\s+/i, '');
-  const mov = await quickCapture(limpio);
+  const mov = await quickCapture(sinVerboDeGasto(texto));
   const id = await addTransaction(mov);
   const resumen = `${mov.tipo === 'ingreso' ? 'Ingreso' : 'Gasto'} de ${formatSoles(mov.monto)} · ${mov.categoria} · ${mov.cuenta}`;
   return {
@@ -76,11 +58,9 @@ async function registrarPlata(texto: string): Promise<Mensaje> {
 }
 
 async function crearTarea(texto: string): Promise<Mensaje | null> {
-  const sin = sinTildes(texto.trim());
-  const m = sin.match(RE_TAREA);
-  if (!m) return null;
-  const resto = texto.trim().slice(m[0].length);
-  const t = await addTask(resto || texto);
+  const resto = textoDeTarea(texto);
+  if (resto === null) return null;
+  const t = await addTask(resto);
   if (!t) return null;
   const cuando = t.fecha_limite ? ` para el ${t.fecha_limite.split('-').reverse().join('/')}` : '';
   const resumen = `${t.prioridad === 'alta' ? '❗ ' : ''}${t.titulo}${cuando}`;
