@@ -21,6 +21,13 @@ export type BriefInput = {
   pagos: Payment[];
 };
 
+// "vence hoy", "1 día", "5 días" o "vencido hace 3 días" (antes salía "-3 días").
+function cuandoVence(dias: number) {
+  if (dias === 0) return 'vence hoy';
+  if (dias < 0) return `vencido hace ${-dias} día${dias === -1 ? '' : 's'}`;
+  return `${dias} día${dias === 1 ? '' : 's'}`;
+}
+
 export function composeBrief({ eventos, correos, tareas, budgets, spent, docs, profile, pagos }: BriefInput, now = new Date()): Brief {
   const lineas: string[] = [];
   const reuniones = eventos.filter((e) => !e.todoElDia);
@@ -50,7 +57,7 @@ export function composeBrief({ eventos, correos, tareas, budgets, spent, docs, p
 
   const porVencer = docs.filter((d) => d.fecha_vencimiento && daysUntil(d.fecha_vencimiento, now) <= 7);
   if (porVencer.length) {
-    lineas.push(`📄 ${porVencer.map((d) => `${d.nombre} (${daysUntil(d.fecha_vencimiento!, now)} días)`).join(' · ')}`);
+    lineas.push(`📄 ${porVencer.map((d) => `${d.nombre} (${cuandoVence(daysUntil(d.fecha_vencimiento!, now))})`).join(' · ')}`);
   }
 
   if (profile) {

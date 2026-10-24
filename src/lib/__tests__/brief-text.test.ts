@@ -39,4 +39,13 @@ describe('resumen del día', () => {
     const b = composeBrief({ ...vacio, docs: [{ nombre: 'SOAT', fecha_vencimiento: '2026-10-29' }, { nombre: 'DNI', fecha_vencimiento: '2030-01-01' }] }, HOY);
     expect(b.lineas).toEqual(['📄 SOAT (5 días)']);
   });
+
+  test('dice "vence hoy" o "vencido hace" en vez de días negativos', () => {
+    const docs = [
+      { nombre: 'SOAT', fecha_vencimiento: '2026-10-24' },
+      { nombre: 'Póliza', fecha_vencimiento: '2026-10-21' },
+      { nombre: 'Brevete', fecha_vencimiento: '2026-10-25' },
+    ];
+    expect(composeBrief({ ...vacio, docs }, HOY).lineas).toEqual(['📄 SOAT (vence hoy) · Póliza (vencido hace 3 días) · Brevete (1 día)']);
+  });
 });
