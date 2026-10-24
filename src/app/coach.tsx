@@ -8,7 +8,7 @@ import { Spacing, Type } from '@/constants/theme';
 import { useLoader } from '@/hooks/use-loader';
 import { AiCancelled, friendlyError } from '@/lib/ai';
 import type { Log } from '@/lib/coach/adjust';
-import type { Objetivo, Sexo } from '@/lib/coach/nutrition';
+import { profileProblem, type Objetivo, type Sexo } from '@/lib/coach/nutrition';
 import {
   generateMenu,
   getProfile,
@@ -92,8 +92,9 @@ function Onboarding({ onSaved }: { onSaved: () => void }) {
 
   async function guardar() {
     const datos = { edad: num(f.edad), estatura_cm: num(f.estatura), peso_kg: num(f.peso), dias_por_semana: num(f.dias) };
-    if (Object.values(datos).some((v) => !Number.isFinite(v) || v <= 0)) {
-      Alert.alert('Faltan datos', 'Completa edad, estatura, peso y días por semana.');
+    const problema = profileProblem(datos);
+    if (problema) {
+      Alert.alert('Revisa tus datos', problema);
       return;
     }
     try {

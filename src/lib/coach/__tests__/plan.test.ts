@@ -2,7 +2,7 @@
 import { describe, expect, test } from 'bun:test';
 
 import { calorieAdjustment, healthCheck, recoveryAdjustment, stalledExercises, type Checkin, type Log } from '@/lib/coach/adjust';
-import { activityFactor, bmr, computeTargets, type ProfileInput } from '@/lib/coach/nutrition';
+import { activityFactor, bmr, computeTargets, profileProblem, type ProfileInput } from '@/lib/coach/nutrition';
 import { adaptToInjuries, buildRoutine, todaySession } from '@/lib/coach/routine';
 
 const YO: ProfileInput = { edad: 25, sexo: 'hombre', estatura_cm: 175, peso_kg: 80, objetivo: 'grasa', dias_por_semana: 4 };
@@ -29,6 +29,15 @@ describe('calorías y macros', () => {
     const sedentaria: ProfileInput = { edad: 30, sexo: 'mujer', estatura_cm: 155, peso_kg: 50, objetivo: 'grasa', dias_por_semana: 1 };
     const t = computeTargets(sedentaria);
     expect(t.calorias).toBe(t.bmr);
+  });
+
+  test('reviso que mis datos tengan sentido antes de calcular', () => {
+    const ok = { edad: 25, estatura_cm: 175, peso_kg: 80, dias_por_semana: 4 };
+    expect(profileProblem(ok)).toBeNull();
+    expect(profileProblem({ ...ok, estatura_cm: 1.75 })).toContain('centímetros');
+    expect(profileProblem({ ...ok, edad: Number.NaN })).toContain('Completa');
+    expect(profileProblem({ ...ok, peso_kg: 800 })).toContain('peso');
+    expect(profileProblem({ ...ok, dias_por_semana: 9 })).toContain('1 a 7');
   });
 });
 
