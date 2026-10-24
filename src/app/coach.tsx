@@ -2,7 +2,7 @@ import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Alert, Text, View } from 'react-native';
 
-import { Badge, Body, Button, Card, Chip, Display, Input, ListItem, Muted, Overline, Progress, Row, Screen, Segmented, Skeleton, Stat, useModule, usePalette } from '@/components/ui/kit';
+import { Badge, Body, Button, Card, Display, Input, ListItem, Muted, Overline, Progress, Row, Screen, Segmented, Skeleton, Stat, useModule, usePalette } from '@/components/ui/kit';
 import { Spacing, Type } from '@/constants/theme';
 import type { Log } from '@/lib/coach/adjust';
 import type { Objetivo, Sexo } from '@/lib/coach/nutrition';
@@ -104,7 +104,7 @@ function Onboarding({ onSaved }: { onSaved: () => void }) {
   }
 
   return (
-    <Card title="Cuéntame de ti" icon="account-heart-outline" accent={m.solid}>
+    <Card title="Cuéntame de ti" subtitle="Con esto calculo tus calorías y tu rutina" icon="account-heart-outline" accent={m.solid}>
       <Row gap={10}>
         <View style={{ flex: 1 }}>
           <Input icon="cake-variant-outline" placeholder="Edad" value={f.edad} onChangeText={set('edad')} keyboardType="number-pad" />
@@ -121,17 +121,27 @@ function Onboarding({ onSaved }: { onSaved: () => void }) {
           <Input icon="calendar-week" placeholder="Días/sem" value={f.dias} onChangeText={set('dias')} keyboardType="number-pad" />
         </View>
       </Row>
-      <Muted>Sexo</Muted>
-      <Row>
-        <Chip label="Hombre" selected={sexo === 'hombre'} color={m.solid} onPress={() => setSexo('hombre')} />
-        <Chip label="Mujer" selected={sexo === 'mujer'} color={m.solid} onPress={() => setSexo('mujer')} />
-      </Row>
-      <Muted>Objetivo</Muted>
-      <Row style={{ flexWrap: 'wrap' }}>
-        <Chip label="Bajar grasa" selected={objetivo === 'grasa'} color={m.solid} onPress={() => setObjetivo('grasa')} />
-        <Chip label="Ganar masa" selected={objetivo === 'masa'} color={m.solid} onPress={() => setObjetivo('masa')} />
-        <Chip label="Mantener" selected={objetivo === 'mantener'} color={m.solid} onPress={() => setObjetivo('mantener')} />
-      </Row>
+      <Overline>Sexo</Overline>
+      <Segmented<Sexo>
+        value={sexo}
+        onChange={setSexo}
+        color={m.solid}
+        options={[
+          { label: 'Hombre', value: 'hombre', icon: 'gender-male' },
+          { label: 'Mujer', value: 'mujer', icon: 'gender-female' },
+        ]}
+      />
+      <Overline>Objetivo</Overline>
+      <Segmented<Objetivo>
+        value={objetivo}
+        onChange={setObjetivo}
+        color={m.solid}
+        options={[
+          { label: 'Bajar grasa', value: 'grasa' },
+          { label: 'Ganar masa', value: 'masa' },
+          { label: 'Mantener', value: 'mantener' },
+        ]}
+      />
       <Input icon="bandage" placeholder="Lesiones (ej. rodilla, hombro)" value={f.lesiones} onChangeText={set('lesiones')} />
       <Input icon="food-off-outline" placeholder="Alimentos que no como" value={f.excluidos} onChangeText={set('excluidos')} />
       <Button label="Calcular mi plan" icon="calculator-variant-outline" color={m.solid} onPress={guardar} />
