@@ -10,4 +10,6 @@ export type AiOptions = {
   temperature?: number;
   // JSON Schema: la IA local queda obligada a responder JSON válido con esta forma.
   json?: object;
+  // Recibo el texto a medida que se escribe, para mostrarlo sin esperar al final.
+  onToken?: (textoHastaAhora: string) => void;
 };
