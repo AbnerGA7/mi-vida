@@ -58,12 +58,17 @@ function getContext() {
   return contextPromise;
 }
 
+// Qwen a veces sigue escribiendo otro turno; corto en sus marcas de fin.
+const STOP = ['<|im_end|>', '<|endoftext|>', '<|im_start|>'];
+
 export async function completeLocal(messages: ChatMessage[], { maxTokens = 512, temperature = 0.3, json }: AiOptions = {}) {
   const ctx = await getContext();
   const result = await ctx.completion({
     messages,
     n_predict: maxTokens,
     temperature,
+    top_p: 0.9,
+    stop: STOP,
     ...(json ? { response_format: { type: 'json_schema' as const, json_schema: { strict: true, schema: json } } } : {}),
   });
   return result.text.trim();
