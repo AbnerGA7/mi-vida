@@ -1,5 +1,6 @@
 import { getDb } from '@/lib/db';
 import type { MonthlyBudget, SpentByCategory } from '@/lib/finance/budget';
+import type { SavingsGoal } from '@/lib/finance/goals';
 
 export const CATEGORIAS = [
   'comida',
@@ -100,4 +101,27 @@ export async function setBudget(categoria: string, monto_mensual: number) {
     categoria,
     monto_mensual,
   );
+}
+
+export async function listGoals() {
+  const db = await getDb();
+  return db.getAllAsync<SavingsGoal>(
+    'SELECT id, nombre, meta, ahorrado, fecha_objetivo FROM savings_goals ORDER BY fecha_objetivo IS NULL, fecha_objetivo, id',
+  );
+}
+
+export async function addGoal(nombre: string, meta: number, fecha_objetivo: string | null) {
+  const db = await getDb();
+  await db.runAsync('INSERT INTO savings_goals (nombre, meta, fecha_objetivo) VALUES (?, ?, ?)', nombre, meta, fecha_objetivo);
+}
+
+// Abono (o retiro, con monto negativo) sin dejar la meta por debajo de cero.
+export async function addToGoal(id: number, monto: number) {
+  const db = await getDb();
+  await db.runAsync('UPDATE savings_goals SET ahorrado = MAX(0, ahorrado + ?) WHERE id = ?', monto, id);
+}
+
+export async function deleteGoal(id: number) {
+  const db = await getDb();
+  await db.runAsync('DELETE FROM savings_goals WHERE id = ?', id);
 }
