@@ -45,20 +45,21 @@ function LoginScreen() {
 
   return (
     <Shell>
-      <View style={styles.top}>
+      <Animated.View entering={FadeInDown.delay(100).springify().damping(18)} style={styles.top}>
         <Image source={require('@/assets/images/icon.png')} style={styles.logo} />
         <Text style={styles.title}>Mi Vida</Text>
         <Text style={styles.subtitle}>Tu plata, tu cuerpo, tus papeles y tu día, en un solo lugar.</Text>
-      </View>
+      </Animated.View>
 
       <View style={styles.features}>
-        <Feature icon="cash-multiple" text="Controla tus gastos y presupuestos" />
-        <Feature icon="brain" text="Pregúntale a tus documentos" />
-        <Feature icon="dumbbell" text="Rutina y menú que se ajustan a ti" />
-        <Feature icon="shield-lock" text="IA local: tus datos no salen del celular" />
+        {FEATURES.map((f, i) => (
+          <Animated.View key={f.text} entering={FadeInDown.delay(260 + i * 70).springify().damping(18)}>
+            <Feature icon={f.icon} text={f.text} />
+          </Animated.View>
+        ))}
       </View>
 
-      <View style={styles.bottom}>
+      <Animated.View entering={FadeIn.delay(600).duration(400)} style={styles.bottom}>
         <Pressable
           disabled={!request}
           onPress={() => promptAsync()}
@@ -67,10 +68,17 @@ function LoginScreen() {
           <Text style={styles.googleLabel}>Entrar con Google</Text>
         </Pressable>
         {error ? <ErrorBox text={error} /> : <Text style={styles.note}>Solo lectura de Gmail y Calendar · protegido con huella</Text>}
-      </View>
+      </Animated.View>
     </Shell>
   );
 }
+
+const FEATURES: { icon: ComponentProps<typeof MaterialCommunityIcons>['name']; text: string }[] = [
+  { icon: 'cash-multiple', text: 'Controla tus gastos y presupuestos' },
+  { icon: 'brain', text: 'Pregúntale a tus documentos' },
+  { icon: 'dumbbell', text: 'Rutina y menú que se ajustan a ti' },
+  { icon: 'shield-lock', text: 'IA local: tus datos no salen del celular' },
+];
 
 function LockScreen() {
   const { unlock, signOut, user, error } = useSession();
@@ -81,15 +89,15 @@ function LockScreen() {
 
   return (
     <Shell>
-      <View style={styles.top}>
+      <Animated.View entering={FadeInDown.delay(80).springify().damping(18)} style={styles.top}>
         <View style={styles.lockCircle}>
           <MaterialCommunityIcons name="fingerprint" size={64} color="#FFFFFF" />
         </View>
         <Text style={styles.title}>Hola{user?.name ? `, ${user.name.split(' ')[0]}` : ''}</Text>
         <Text style={styles.subtitle}>{user?.email}</Text>
-      </View>
+      </Animated.View>
 
-      <View style={styles.bottom}>
+      <Animated.View entering={FadeIn.delay(300).duration(400)} style={styles.bottom}>
         <Pressable onPress={unlock} style={({ pressed }) => [styles.google, { opacity: pressed ? 0.9 : 1 }]}>
           <MaterialCommunityIcons name="lock-open-variant" size={22} color="#0B3B36" />
           <Text style={styles.googleLabel}>Desbloquear</Text>
@@ -98,7 +106,7 @@ function LockScreen() {
           <Text style={styles.linkLabel}>Cerrar sesión</Text>
         </Pressable>
         {error ? <ErrorBox text={error} /> : null}
-      </View>
+      </Animated.View>
     </Shell>
   );
 }
