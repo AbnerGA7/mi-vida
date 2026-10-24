@@ -88,12 +88,18 @@ async function readText(mime: string, ruta: string, nombre: string, askCloud?: A
   return '';
 }
 
-const SYSTEM = `Clasifica un documento personal peruano. Responde SOLO con JSON:
-{"categoria": string, "resumen": string}
-categoria debe ser una de: ${CATEGORIAS_DOC.join(', ')}.
-Pistas: SOAT, póliza o seguro → Seguros; tarjeta de propiedad o brevete → Vehículos; DNI o pasaporte → Identidad y trámites.
-resumen: una línea con qué es el documento, de quién y lo más importante (montos, número de póliza solo últimos 4 dígitos).
-No inventes datos que no estén en el texto. No des interpretaciones legales.`;
+const SYSTEM = `Clasificas documentos personales peruanos leídos con OCR (puede haber errores de lectura).
+Responde SOLO con JSON {"categoria": string, "resumen": string}.
+categoria es una de: ${CATEGORIAS_DOC.join(', ')}.
+Guía: SOAT, póliza, EPS o seguro → Seguros; brevete, tarjeta de propiedad o revisión técnica → Vehículos;
+DNI, pasaporte, carné de extranjería o antecedentes → Identidad y trámites; contrato de alquiler o de trabajo → Contratos;
+receta, análisis o descanso médico → Salud; recibos de luz, agua o internet y títulos de propiedad → Hogar;
+SUNAT, boletas de pago, estados de cuenta y facturas → Finanzas e impuestos; títulos, diplomas y constancias → Estudios.
+resumen: máximo 12 palabras: qué es, de qué entidad y el dato clave (placa, monto; números de póliza o cuenta solo últimos 4 dígitos).
+No inventes datos que no estén en el texto.
+
+Ejemplo: "RIMAC SEGUROS CERTIFICADO SOAT PLACA ABC-123 VIGENCIA DESDE 01/02/2026 HASTA 01/02/2027"
+→ {"categoria": "Seguros", "resumen": "SOAT Rímac del vehículo placa ABC-123"}`;
 
 async function classify(nombre: string, texto: string) {
   if (!texto.trim()) return { categoria: 'Notas personales', resumen: 'Sin texto leído todavía' };
