@@ -3,7 +3,7 @@ import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-spe
 import { useCallback, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 
-import { PALABRAS_DICTADO, fixDictation } from '@/lib/voice-text';
+import { PALABRAS_DICTADO, fixDictation, textoParaVoz } from '@/lib/voice-text';
 
 const IDIOMA = 'es-PE';
 
@@ -70,15 +70,35 @@ export function useDictation(onFinal: (texto: string) => void) {
   return { escuchando, parcial, empezar, parar };
 }
 
-// Leo la respuesta en voz alta, sin las marcas de fuente como [1].
-export function speak(texto: string) {
-  const limpio = texto
-    .replace(/\[\d+\]/g, '')
-    .replace(/Fuente:.*$/gim, '')
-    .replace(/S\/\s?/g, 'soles ')
-    .trim();
+// Elijo una sola vez la mejor voz en español instalada: primero de Perú, luego latina, luego cualquiera.
+// Prefiero las voces locales (no necesitan internet y empiezan a hablar al toque).
+let vozPromise: Promise<string | undefined> | null = null;
+
+function mejorVoz() {
+  vozPromise ??= Speech.getAvailableVoicesAsync()
+    .then((voces) => {
+      const es = voces.filter((v) => v.language.toLowerCase().startsWith('es'));
+      const puntaje = (v: Speech.Voice) => {
+        const lang = v.language.toLowerCase().replace('_', '-');
+        let s = lang === 'es-pe' ? 30 : lang === 'es-us' || lang === 'es-419' || lang === 'es-mx' ? 20 : 10;
+        if (v.quality === Speech.VoiceQuality.Enhanced) s += 5;
+        if (/local/i.test(v.identifier)) s += 3;
+        if (/network/i.test(v.identifier)) s -= 3;
+        return s;
+      };
+      return es.sort((a, b) => puntaje(b) - puntaje(a))[0]?.identifier;
+    })
+    .catch(() => undefined);
+  return vozPromise;
+}
+
+// Leo la respuesta en voz alta, sin las marcas de fuente como [1] y con fechas y montos bien dichos.
+export async function speak(texto: string) {
+  const limpio = textoParaVoz(texto);
+  if (!limpio) return;
   Speech.stop();
-  Speech.speak(limpio, { language: IDIOMA, rate: 1.0 });
+  const voice = await mejorVoz();
+  Speech.speak(limpio, { language: IDIOMA, voice, rate: 1.05 });
 }
 
 export function stopSpeaking() {
