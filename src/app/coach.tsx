@@ -162,7 +162,7 @@ function Plan({ profile, onChanged }: { profile: Profile; onChanged: () => void 
         icon="weight-lifter"
         accent={m.solid}
         right={<Badge label={`${hechas.length}/${totalSeries}`} color={hechas.length >= totalSeries ? p.success : m.solid} />}>
-        <Progress value={hechas.length / totalSeries} color={m.solid} />
+        <Progress value={totalSeries ? hechas.length / totalSeries : 0} color={m.solid} />
         <Muted>
           {rutina.division}. Calienta 5-10 min antes.
         </Muted>
