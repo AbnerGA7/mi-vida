@@ -234,6 +234,7 @@ export default function CerebroScreen() {
             const v = vencimiento(d.fecha_vencimiento)!;
             return <ListItem key={d.id} icon="calendar-alert" iconColor={v.color} title={d.nombre} subtitle={v.texto} onPress={() => opciones(d)} />;
           })}
+          <Muted size={12}>Te aviso con una notificación 30, 7 y 1 día antes de cada vencimiento.</Muted>
         </Card>
       )}
 
