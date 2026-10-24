@@ -43,14 +43,16 @@ export const Colors = {
   },
 } as const;
 
-// Cada módulo tiene su color para reconocerlo de un vistazo.
+// Cada módulo tiene su color y su degradado para reconocerlo de un vistazo.
 export const ModuleColors = {
-  hoy: { solid: '#F59E0B', soft: '#FEF3C7', softDark: '#3A2A08' },
-  plata: { solid: '#10B981', soft: '#D1FAE5', softDark: '#0C3326' },
-  cerebro: { solid: '#8B5CF6', soft: '#EDE9FE', softDark: '#2A1F4A' },
-  coach: { solid: '#F43F5E', soft: '#FFE4E6', softDark: '#43151F' },
-  ajustes: { solid: '#64748B', soft: '#E2E8F0', softDark: '#1F2937' },
+  hoy: { solid: '#F59E0B', gradient: ['#FDB022', '#F97316', '#C2410C'], soft: '#FEF3C7', softDark: '#2A1E06' },
+  plata: { solid: '#10B981', gradient: ['#34D399', '#059669', '#065F46'], soft: '#D1FAE5', softDark: '#062A1E' },
+  cerebro: { solid: '#8B5CF6', gradient: ['#A78BFA', '#7C3AED', '#4C1D95'], soft: '#EDE9FE', softDark: '#1E1640' },
+  coach: { solid: '#F43F5E', gradient: ['#FB7185', '#E11D48', '#881337'], soft: '#FFE4E6', softDark: '#36101A' },
+  ajustes: { solid: '#64748B', gradient: ['#2DD4BF', '#0F766E', '#0B3B36'], soft: '#E2E8F0', softDark: '#161B24' },
 } as const;
+
+export const BrandGradient = ['#14B8A6', '#0F766E', '#062925'] as const;
 
 export type ModuleKey = keyof typeof ModuleColors;
 
