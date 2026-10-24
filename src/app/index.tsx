@@ -207,11 +207,14 @@ export default function HoyScreen() {
       )}
 
       {brief && brief.lineas.length > 0 && (
-        <Card title="Mi resumen" icon="newspaper-variant-outline" accent={m.solid}>
+        <Card title="Mi resumen" subtitle={`Cada día a las ${BRIEF_HOUR}:00`} icon="newspaper-variant-outline" accent={m.solid}>
           {brief.lineas.map((l, i) => (
-            <Body key={i}>{l}</Body>
+            <Row key={i} gap={10} style={{ alignItems: 'flex-start' }}>
+              <View style={[styles.bullet, { backgroundColor: m.solid }]} />
+              <Body style={{ flex: 1 }}>{l}</Body>
+            </Row>
           ))}
-          <Muted size={12}>Te llega cada día a las {BRIEF_HOUR}:00 y se actualiza cada vez que abres la app.</Muted>
+          <Muted size={12}>Se actualiza cada vez que abres la app.</Muted>
           <Button label="Enviarme el resumen ahora" icon="bell-ring-outline" variant="secondary" onPress={() => sendBriefNow(brief)} />
         </Card>
       )}
