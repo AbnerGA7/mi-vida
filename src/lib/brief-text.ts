@@ -21,6 +21,8 @@ export type BriefInput = {
   pagos: Payment[];
 };
 
+const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
+
 // "vence hoy", "1 día", "5 días" o "vencido hace 3 días" (antes salía "-3 días").
 function cuandoVence(dias: number) {
   if (dias === 0) return 'vence hoy';
@@ -39,9 +41,9 @@ export function composeBrief({ eventos, correos, tareas, budgets, spent, docs, p
   }
   const vencidas = tareas.filter((t) => taskBucket(t, now) === 'vencida').length;
   if (urgentes.length) {
-    lineas.push(`✅ ${urgentes.length} tarea(s) para hoy${vencidas ? ` (${vencidas} vencida/s)` : ''}`);
+    lineas.push(`✅ ${plural(urgentes.length, 'tarea', 'tareas')} para hoy${vencidas ? ` (${plural(vencidas, 'vencida', 'vencidas')})` : ''}`);
   }
-  if (correos.length) lineas.push(`📧 ${correos.length} correo(s) importante(s) sin leer`);
+  if (correos.length) lineas.push(`📧 ${plural(correos.length, 'correo importante', 'correos importantes')} sin leer`);
 
   const enRiesgo = summarizeBudgets(budgets, spent, now).filter((b) => b.estado !== 'ok');
   if (enRiesgo.length) {
@@ -67,7 +69,7 @@ export function composeBrief({ eventos, correos, tareas, budgets, spent, docs, p
 
   const titular =
     [
-      reuniones.length ? `${reuniones.length} reunión(es)` : 'Sin reuniones',
+      reuniones.length ? plural(reuniones.length, 'reunión', 'reuniones') : 'Sin reuniones',
       principal ? `lo más importante: ${principal.titulo}` : null,
     ]
       .filter(Boolean)
