@@ -389,6 +389,20 @@ export function Body({ children, color, bold, style }: { children: ReactNode; co
 }
 
 // Número grande para cifras protagonistas (balance, calorías…).
+export function Display({ children, color, size = 40 }: { children: ReactNode; color?: string; size?: number }) {
+  const p = usePalette();
+  return (
+    <Text style={[Type.display, { color: color ?? p.text, fontSize: size, lineHeight: size * 1.15 }]} numberOfLines={1} adjustsFontSizeToFit>
+      {children}
+    </Text>
+  );
+}
+
+export function Overline({ children, color }: { children: ReactNode; color?: string }) {
+  const p = usePalette();
+  return <Text style={[Type.overline, { color: color ?? p.textSecondary }]}>{children}</Text>;
+}
+
 export function Row({ children, gap = Spacing.two, style }: { children: ReactNode; gap?: number; style?: ViewStyle }) {
   return <View style={[{ flexDirection: 'row', alignItems: 'center', gap }, style]}>{children}</View>;
 }
