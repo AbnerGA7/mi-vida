@@ -466,6 +466,11 @@ export function ListItem({
   );
 }
 
+export function Divider() {
+  const p = usePalette();
+  return <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: p.border }} />;
+}
+
 export function Empty({ icon, text }: { icon: IconName; text: string }) {
   const p = usePalette();
   return (
