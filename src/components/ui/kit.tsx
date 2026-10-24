@@ -620,7 +620,7 @@ export function Stat({
   const p = usePalette();
   if (tone === 'hero') {
     return (
-      <View style={[styles.stat, styles.statHero]}>
+      <View style={[styles.stat, styles.statHero]} accessible accessibilityLabel={`${label}: ${value}`}>
         {icon ? <MaterialCommunityIcons name={icon} size={18} color="rgba(255,255,255,0.9)" /> : null}
         <Text style={[Type.h2, { color: '#FFFFFF' }]} numberOfLines={1} adjustsFontSizeToFit>
           {value}
@@ -633,7 +633,7 @@ export function Stat({
   }
   const c = color ?? p.textSecondary;
   return (
-    <View style={[styles.stat, { backgroundColor: p.backgroundSelected }]}>
+    <View style={[styles.stat, { backgroundColor: p.backgroundSelected }]} accessible accessibilityLabel={`${label}: ${value}`}>
       {icon ? (
         <View style={[styles.statIcon, { backgroundColor: alpha(c, p.dark ? 0.2 : 0.14) }]}>
           <MaterialCommunityIcons name={icon} size={16} color={c} />
