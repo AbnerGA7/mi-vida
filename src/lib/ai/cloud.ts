@@ -144,6 +144,18 @@ async function streamOnce(model: string, messages: ChatMessage[], opts: CloudOpt
     const reader = body.getReader();
     const decode = decoder();
     let buffer = '';
+    const leerLinea = (line: string) => {
+      if (!line.startsWith('data:')) return;
+      try {
+        const piece = textOf(JSON.parse(line.slice(5)));
+        if (piece) {
+          full += piece;
+          opts.onPartial?.(full);
+        }
+      } catch {
+        // línea incompleta: la ignoro
+      }
+    };
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
@@ -153,18 +165,11 @@ async function streamOnce(model: string, messages: ChatMessage[], opts: CloudOpt
       while ((idx = buffer.indexOf('\n')) >= 0) {
         const line = buffer.slice(0, idx).trim();
         buffer = buffer.slice(idx + 1);
-        if (!line.startsWith('data:')) continue;
-        try {
-          const piece = textOf(JSON.parse(line.slice(5)));
-          if (piece) {
-            full += piece;
-            opts.onPartial?.(full);
-          }
-        } catch {
-          // línea incompleta: la ignoro
-        }
+        leerLinea(line);
       }
     }
+    // Si el último evento llegó sin salto de línea final, no pierdo el último pedazo.
+    leerLinea(buffer.trim());
     return full.trim();
   } catch (e) {
     if (opts.signal?.aborted) throw new AiCancelled();
