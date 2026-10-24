@@ -8,7 +8,8 @@ export const sinTildes = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '
 
 export const RE_GASTO = /^(gaste|pague|compre|anota|anotame|registra|registrame|apunta|me cobraron)\b/;
 export const RE_INGRESO = /^(me pagaron|cobre|me depositaron|me yapearon|me plinearon|recibi|gane|me devolvieron)\b/;
-export const RE_TAREA = /^(recuerdame|recordarme|recordatorio|tarea|nueva tarea|agrega tarea|anota tarea|tengo que|no olvidar|no me olvide de|pendiente)\b[:,]?\s*/;
+export const RE_TAREA =
+  /^(recuerdame|acuerdame|recordarme|recordatorio|tarea|nueva tarea|agrega tarea|anota tarea|tengo que|no olvidar|no me olvide de|no me olvides|pendiente)\b[:,]?\s*(?:(?:que|de)\s+)?/;
 export const RE_DOCS = /\b(soat|dni|pasaporte|brevete|licencia|poliza|seguro|contrato|documento|documentos|vence|vencimiento|vigencia|tarjeta de propiedad|revision tecnica|certificado|recibo)\b/;
 export const RE_PLATA = /\b(plata|dinero|gasto|gaste|gastos|gastando|ahorro|ahorrar|presupuesto|presupuestos|balance|ingreso|ingresos|sueldo|soles|deuda|deudas|yape|plin|tarjeta|cuanto llevo|finanzas|mes|economia|comida|transporte)\b/;
 

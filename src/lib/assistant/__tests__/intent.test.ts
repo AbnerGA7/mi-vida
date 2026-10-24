@@ -32,6 +32,12 @@ describe('tareas desde el chat', () => {
     expect(textoDeTarea('tengo que renovar el DNI')).toBe('renovar el DNI');
   });
 
+  test('quita el "que" o "de" que sigue a la frase', () => {
+    expect(textoDeTarea('recuérdame que mañana pague la luz')).toBe('mañana pague la luz');
+    expect(textoDeTarea('no me olvides de comprar pan')).toBe('comprar pan');
+    expect(textoDeTarea('acuérdame llamar a mamá el domingo')).toBe('llamar a mamá el domingo');
+  });
+
   test('si no empieza como tarea no la crea', () => {
     expect(textoDeTarea('¿qué tengo para hoy?')).toBeNull();
   });
