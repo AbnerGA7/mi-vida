@@ -72,7 +72,8 @@
           }
         }
       ],
-      "./plugins/with-fast-gradle"
+      "./plugins/with-fast-gradle",
+      "./plugins/with-short-cmake-paths"
     ],
     "experiments": {
       "typedRoutes": true,
