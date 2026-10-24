@@ -98,6 +98,17 @@ cp .env.example .env
 npx expo run:android
 ```
 
+La APK se compila solo para **arm64-v8a**, con R8 y reducción de recursos en release, y el plugin `plugins/with-fast-gradle.js` activa la caché de Gradle, builds en paralelo y más memoria (4 GB). Como `/android` se genera con `expo prebuild`, estos ajustes viven en `app.json` y en el plugin, no se editan a mano.
+
+### Pruebas
+
+```bash
+npx tsc --noEmit   # tipos
+npm test           # bun test: clasificación, fechas, respuestas, voz, boletas, pagos, metas y progreso
+```
+
+Las pruebas usan textos como los devuelve el OCR de ML Kit y cubren solo la lógica en código puro (sin módulos nativos).
+
 ### Variables de entorno (`.env`)
 
 | Variable | De dónde sale |
