@@ -106,6 +106,13 @@ const MIGRATIONS = [
     fecha_objetivo TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );`,
+  // v6: pagos fijos de cada mes para las alertas de pago.
+  `CREATE TABLE IF NOT EXISTS payments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre TEXT NOT NULL,
+    monto REAL NOT NULL CHECK (monto > 0),
+    dia INTEGER NOT NULL CHECK (dia BETWEEN 1 AND 31)
+  );`,
 ];
 
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
