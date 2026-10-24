@@ -249,27 +249,29 @@ export default function CerebroScreen() {
 
       <Card title="Mis documentos" icon="folder-outline" accent={m.solid} right={<Badge label={String(docs.length)} color={m.solid} />}>
         {docs.length === 0 ? (
-          <Empty icon="file-document-outline" text="Escanea tu SOAT, DNI, contrato de alquiler o póliza para empezar." />
+          <Empty icon="file-document-outline" color={m.solid} text="Escanea tu SOAT, DNI, contrato de alquiler o póliza para empezar." />
         ) : (
-          docs.map((d) => {
+          docs.map((d, i) => {
             const v = vencimiento(d.fecha_vencimiento);
             return (
-              <ListItem
-                key={d.id}
-                icon={ICONO_DOC[d.categoria] ?? 'file-outline'}
-                iconColor={m.solid}
-                title={d.nombre}
-                subtitle={`${d.categoria}${d.resumen && d.resumen !== d.nombre ? ` · ${d.resumen}` : ''}`}
-                right={
-                  v ? (
-                    <Badge label={v.texto.replace('Vence el ', '')} color={v.color} />
-                  ) : !d.texto?.trim() ? (
-                    <Badge label="Sin leer" color={p.warning} />
-                  ) : undefined
-                }
-                onPress={() => opciones(d)}
-                onLongPress={() => borrar(d)}
-              />
+              <View key={d.id} style={{ gap: Spacing.two }}>
+                {i > 0 ? <Divider /> : null}
+                <ListItem
+                  icon={ICONO_DOC[d.categoria] ?? 'file-outline'}
+                  iconColor={m.solid}
+                  title={d.nombre}
+                  subtitle={`${d.categoria}${d.resumen && d.resumen !== d.nombre ? ` · ${d.resumen}` : ''}`}
+                  right={
+                    v ? (
+                      <Badge label={v.texto.replace('Vence el ', '')} color={v.color} />
+                    ) : !d.texto?.trim() ? (
+                      <Badge label="Sin leer" color={p.warning} />
+                    ) : undefined
+                  }
+                  onPress={() => opciones(d)}
+                  onLongPress={() => borrar(d)}
+                />
+              </View>
             );
           })
         )}
