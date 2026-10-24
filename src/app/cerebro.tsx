@@ -111,6 +111,7 @@ export default function CerebroScreen() {
   async function preguntar(texto = pregunta, conVoz = false) {
     if (!texto.trim()) return;
     setPensando(true);
+    stopSpeaking();
     try {
       const r = await askDocuments(texto);
       setRespuesta(r);
