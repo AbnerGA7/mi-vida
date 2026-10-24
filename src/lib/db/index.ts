@@ -97,6 +97,15 @@ const MIGRATIONS = [
   CREATE INDEX IF NOT EXISTS idx_tasks_pendientes ON tasks (hecha, fecha_limite);
   CREATE INDEX IF NOT EXISTS idx_workout_logs_fecha ON workout_logs (fecha);
   CREATE INDEX IF NOT EXISTS idx_workout_logs_ejercicio ON workout_logs (ejercicio, fecha);`,
+  // v5: metas de ahorro del asesor financiero.
+  `CREATE TABLE IF NOT EXISTS savings_goals (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre TEXT NOT NULL,
+    meta REAL NOT NULL CHECK (meta > 0),
+    ahorrado REAL NOT NULL DEFAULT 0,
+    fecha_objetivo TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );`,
 ];
 
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
