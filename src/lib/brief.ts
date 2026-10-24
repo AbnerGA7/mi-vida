@@ -1,3 +1,4 @@
+import * as Crypto from 'expo-crypto';
 import * as Notifications from 'expo-notifications';
 import * as SecureStore from 'expo-secure-store';
 
@@ -12,6 +13,7 @@ import { taskBucket, upcomingTasks, type Tarea } from '@/lib/tasks';
 
 export const BRIEF_HOUR = 7;
 const NOTIF_KEY = 'brief_notification_id';
+const NOTIF_CONTENT_KEY = 'brief_notification_content';
 
 export type Brief = { titular: string; lineas: string[] };
 
@@ -73,17 +75,29 @@ export async function scheduleMorningBrief(brief: Brief) {
   const perm = await Notifications.requestPermissionsAsync();
   if (!perm.granted) return false;
 
-  const anterior = await SecureStore.getItemAsync(NOTIF_KEY);
+  const content = {
+    title: `☀️ Buenos días: ${brief.titular}`,
+    body: brief.lineas.join('\n') || 'Abre Mi Vida para ver tu día.',
+  };
+  // Guardo solo la huella del texto: el almacén seguro tiene un límite de tamaño por valor.
+  const firma = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, JSON.stringify(content));
+
+  // Cada vez que vuelvo a la pestaña Hoy se recalcula el resumen: solo reprogramo si cambió.
+  const [anterior, firmaAnterior] = await Promise.all([
+    SecureStore.getItemAsync(NOTIF_KEY),
+    SecureStore.getItemAsync(NOTIF_CONTENT_KEY),
+  ]);
+  if (anterior && firmaAnterior === firma) {
+    const programadas = await Notifications.getAllScheduledNotificationsAsync();
+    if (programadas.some((n) => n.identifier === anterior)) return true;
+  }
   if (anterior) await Notifications.cancelScheduledNotificationAsync(anterior).catch(() => {});
 
   const id = await Notifications.scheduleNotificationAsync({
-    content: {
-      title: `☀️ Buenos días: ${brief.titular}`,
-      body: brief.lineas.join('\n') || 'Abre Mi Vida para ver tu día.',
-    },
+    content,
     trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour: BRIEF_HOUR, minute: 0 },
   });
-  await SecureStore.setItemAsync(NOTIF_KEY, id);
+  await Promise.all([SecureStore.setItemAsync(NOTIF_KEY, id), SecureStore.setItemAsync(NOTIF_CONTENT_KEY, firma)]);
   return true;
 }
 
