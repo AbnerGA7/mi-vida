@@ -287,11 +287,25 @@ export function Chip({ label, selected, onPress, color }: { label: string; selec
   );
 }
 
-export function Progress({ value, color, height = 8 }: { value: number; color: string; height?: number }) {
+export function Progress({ value, color, height = 8, track }: { value: number; color: string; height?: number; track?: string }) {
   const p = usePalette();
+  const [w, setW] = useState(0);
+  const v = useSharedValue(0);
+  const target = Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
+
+  useEffect(() => {
+    v.value = withTiming(target, { duration: Motion.slow });
+  }, [target, v]);
+
+  const fill = useAnimatedStyle(() => ({ width: v.value * w }));
+
   return (
-    <View style={{ height, borderRadius: height, backgroundColor: p.backgroundSelected, overflow: 'hidden' }}>
-      <View style={{ height, borderRadius: height, width: `${Math.max(0, Math.min(1, value)) * 100}%`, backgroundColor: color }} />
+    <View
+      onLayout={(e) => setW(e.nativeEvent.layout.width)}
+      style={{ height, borderRadius: height, backgroundColor: track ?? p.backgroundSelected, overflow: 'hidden' }}>
+      <Animated.View style={[{ height, borderRadius: height, overflow: 'hidden' }, fill]}>
+        <LinearGradient colors={[color, shade(color, 0.12)]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
+      </Animated.View>
     </View>
   );
 }
