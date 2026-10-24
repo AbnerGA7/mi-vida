@@ -171,32 +171,54 @@ export function Screen({
 }
 
 // Oscurece un color hex para el final del degradado.
+type CardVariant = 'default' | 'tinted' | 'outline';
+
 export function Card({
   title,
+  subtitle,
   icon,
   accent,
   right,
   children,
   style,
+  variant = 'default',
 }: {
   title?: string;
+  subtitle?: string;
   icon?: IconName;
   accent?: string;
   right?: ReactNode;
   children?: ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
+  variant?: CardVariant;
 }) {
   const p = usePalette();
+  const c = accent ?? p.primary;
+  const surface: ViewStyle =
+    variant === 'tinted'
+      ? { backgroundColor: alpha(c, p.dark ? 0.12 : 0.08), borderColor: alpha(c, p.dark ? 0.22 : 0.14) }
+      : variant === 'outline'
+        ? { backgroundColor: 'transparent', borderColor: p.border }
+        : {
+            backgroundColor: p.backgroundElement,
+            borderColor: p.border,
+            boxShadow: p.dark ? undefined : Shadow.light.card,
+          };
   return (
-    <View style={[styles.card, { backgroundColor: p.backgroundElement, borderColor: p.border }, style]}>
+    <View style={[styles.card, surface, style]}>
       {title ? (
         <View style={styles.cardHeader}>
           {icon ? (
-            <View style={[styles.cardIcon, { backgroundColor: (accent ?? p.primary) + '22' }]}>
-              <MaterialCommunityIcons name={icon} size={18} color={accent ?? p.primary} />
+            <View style={[styles.cardIcon, { backgroundColor: alpha(c, p.dark ? 0.18 : 0.12) }]}>
+              <MaterialCommunityIcons name={icon} size={18} color={c} />
             </View>
           ) : null}
-          <Text style={[styles.cardTitle, { color: p.text }]}>{title}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={[Type.title, { color: p.text }]} numberOfLines={1}>
+              {title}
+            </Text>
+            {subtitle ? <Text style={[Type.caption, { color: p.textSecondary }]}>{subtitle}</Text> : null}
+          </View>
           {right}
         </View>
       ) : null}
@@ -684,9 +706,9 @@ const styles = StyleSheet.create({
   heroTitle: { color: '#FFFFFF', fontSize: 26, fontWeight: '800' },
   heroSubtitle: { color: 'rgba(255,255,255,0.9)', fontSize: 14, marginTop: 2 },
   content: { padding: Spacing.three, gap: Spacing.three, paddingBottom: BottomTabInset + Spacing.five },
-  card: { borderRadius: 20, padding: Spacing.three + 2, gap: Spacing.two + 2, borderWidth: StyleSheet.hairlineWidth },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  cardIcon: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  card: { borderRadius: Radius.lg + 2, padding: Spacing.three + 2, gap: Spacing.three - 2, borderWidth: StyleSheet.hairlineWidth },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two + 4 },
+  cardIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   button: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -743,5 +765,4 @@ const styles = StyleSheet.create({
   emptyIcon: { width: 56, height: 56, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
 
   heroRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
-  cardTitle: { fontSize: 17, fontWeight: '700', flex: 1 },
 });
