@@ -296,10 +296,14 @@ export function Progress({ value, color, height = 8 }: { value: number; color: s
   );
 }
 
-export function Badge({ label, color }: { label: string; color: string }) {
+export function Badge({ label, color, icon }: { label: string; color: string; icon?: IconName }) {
+  const { dark } = usePalette();
   return (
-    <View style={[styles.badge, { backgroundColor: color + '22' }]}>
-      <Text style={{ color, fontSize: 12, fontWeight: '700' }}>{label}</Text>
+    <View style={[styles.badge, { backgroundColor: alpha(color, dark ? 0.2 : 0.12) }]}>
+      {icon ? <MaterialCommunityIcons name={icon} size={12} color={color} /> : null}
+      <Text style={[Type.caption, { color, fontFamily: Font.bold }]} numberOfLines={1}>
+        {label}
+      </Text>
     </View>
   );
 }
@@ -444,7 +448,7 @@ const styles = StyleSheet.create({
   inputText: { flex: 1, fontSize: 16, paddingVertical: 13 },
   mic: { width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center' },
   chip: { borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14, borderWidth: 1 },
-  badge: { borderRadius: 999, paddingVertical: 3, paddingHorizontal: 10 },
+  badge: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: Radius.pill, paddingVertical: 4, paddingHorizontal: 10 },
   stat: { flex: 1, borderRadius: 16, padding: Spacing.three, gap: 2, borderWidth: StyleSheet.hairlineWidth },
   item: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.two },
   itemIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
