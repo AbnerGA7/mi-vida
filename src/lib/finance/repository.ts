@@ -1,6 +1,7 @@
 import { getDb } from '@/lib/db';
 import type { MonthlyBudget, SpentByCategory } from '@/lib/finance/budget';
 import type { SavingsGoal } from '@/lib/finance/goals';
+import type { Payment } from '@/lib/finance/payments';
 
 export const CATEGORIAS = [
   'comida',
@@ -124,4 +125,19 @@ export async function addToGoal(id: number, monto: number) {
 export async function deleteGoal(id: number) {
   const db = await getDb();
   await db.runAsync('DELETE FROM savings_goals WHERE id = ?', id);
+}
+
+export async function listPayments() {
+  const db = await getDb();
+  return db.getAllAsync<Payment>('SELECT id, nombre, monto, dia FROM payments ORDER BY dia, nombre');
+}
+
+export async function addPayment(nombre: string, monto: number, dia: number) {
+  const db = await getDb();
+  await db.runAsync('INSERT INTO payments (nombre, monto, dia) VALUES (?, ?, ?)', nombre, monto, dia);
+}
+
+export async function deletePayment(id: number) {
+  const db = await getDb();
+  await db.runAsync('DELETE FROM payments WHERE id = ?', id);
 }
