@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 import { Alert, ScrollView, Text, View } from 'react-native';
 
 import { GoalsCard } from '@/components/finance/goals-card';
+import { PaymentsCard } from '@/components/finance/payments-card';
 import { Badge, Button, Card, Chip, Divider, Display, Empty, Input, ListItem, MicButton, Muted, Overline, Progress, Row, Screen, Stat, useModule, usePalette, type IconName } from '@/components/ui/kit';
 import { speak, useDictation } from '@/lib/voice';
 import { Font, Spacing, Type } from '@/constants/theme';
@@ -195,6 +196,8 @@ export default function PlataScreen() {
           <Button label="Fijar" icon="target" variant="secondary" onPress={guardarPresupuesto} />
         </Row>
       </Card>
+
+      <PaymentsCard />
 
       <GoalsCard />
 
