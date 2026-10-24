@@ -43,4 +43,16 @@ describe('mensajes de error', () => {
   test('sin red sugiere la IA local', () => {
     expect(friendlyError(new Error('Network request failed'))).toContain('Sin conexión');
   });
+
+  test('traduce los errores de Gemini a qué hacer', () => {
+    expect(friendlyError(new Error('Gemini respondió 429: {"error": {"code": 429}}'))).toContain('límite');
+    expect(friendlyError(new Error('Gemini respondió 403: PERMISSION_DENIED'))).toContain('clave');
+    expect(friendlyError(new Error('Gemini respondió 503'))).toContain('caído');
+    expect(friendlyError(new Error('La nube tardó demasiado'))).toContain('tardó');
+  });
+
+  test('deja pasar los mensajes que ya son claros', () => {
+    expect(friendlyError(new Error('No encontré el monto'))).toBe('No encontré el monto');
+    expect(friendlyError('texto suelto')).toBe('texto suelto');
+  });
 });

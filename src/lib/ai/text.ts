@@ -43,5 +43,11 @@ export function friendlyError(e: unknown) {
   if (e instanceof AiCancelled) return 'Cancelado';
   const msg = e instanceof Error ? e.message : String(e);
   if (/Network request failed|network/i.test(msg)) return 'Sin conexión. Intenta de nuevo o usa la IA local.';
+  // Gemini devuelve el código HTTP con su JSON en inglés: lo traduzco a algo que pueda hacer.
+  const status = Number(msg.match(/Gemini respondió (\d{3})/)?.[1]);
+  if (status === 429) return 'Gemini llegó a su límite gratis por ahora. Espera un minuto o usa la IA local.';
+  if (status === 400 || status === 401 || status === 403) return 'Gemini rechazó la clave. Revisa EXPO_PUBLIC_GEMINI_API_KEY en el .env.';
+  if (status >= 500) return 'Gemini está caído en este momento. Intenta en un rato o usa la IA local.';
+  if (/tard[óo] demasiado|timeout/i.test(msg)) return 'La IA tardó demasiado. Intenta con una pregunta más corta.';
   return msg;
 }
