@@ -275,18 +275,46 @@ export function MicButton({ escuchando, onPress, color }: { escuchando: boolean;
   );
 }
 
-export function Chip({ label, selected, onPress, color }: { label: string; selected: boolean; onPress: () => void; color?: string }) {
+export function Chip({
+  label,
+  selected,
+  onPress,
+  color,
+  icon,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+  color?: string;
+  icon?: IconName;
+}) {
   const p = usePalette();
+  const press = usePressScale(0.94);
   const c = color ?? p.primary;
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={onPress}
-      style={[styles.chip, { backgroundColor: selected ? c : p.backgroundSelected, borderColor: selected ? c : p.border }]}>
-      <Text style={{ color: selected ? '#FFFFFF' : p.text, fontWeight: selected ? '700' : '500' }}>{label}</Text>
-    </Pressable>
+      onPressIn={press.onPressIn}
+      onPressOut={press.onPressOut}
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      style={[
+        styles.chip,
+        {
+          backgroundColor: selected ? c : p.backgroundSelected,
+          borderColor: selected ? c : 'transparent',
+        },
+        press.style,
+      ]}>
+      {icon ? <MaterialCommunityIcons name={icon} size={16} color={selected ? '#FFFFFF' : p.textSecondary} /> : null}
+      <Text style={[Type.callout, { color: selected ? '#FFFFFF' : p.text, fontFamily: selected ? Font.semibold : Font.medium }]}>
+        {label.charAt(0).toUpperCase() + label.slice(1)}
+      </Text>
+    </AnimatedPressable>
   );
 }
 
+// Control segmentado con indicador que se desliza.
 export function Progress({ value, color, height = 8, track }: { value: number; color: string; height?: number; track?: string }) {
   const p = usePalette();
   const [w, setW] = useState(0);
@@ -461,7 +489,15 @@ const styles = StyleSheet.create({
   },
   inputText: { flex: 1, fontSize: 16, paddingVertical: 13 },
   mic: { width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center' },
-  chip: { borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14, borderWidth: 1 },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: Radius.pill,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+  },
   badge: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: Radius.pill, paddingVertical: 4, paddingHorizontal: 10 },
   stat: { flex: 1, borderRadius: 16, padding: Spacing.three, gap: 2, borderWidth: StyleSheet.hairlineWidth },
   item: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.two },
