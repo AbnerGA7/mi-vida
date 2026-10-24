@@ -3,6 +3,8 @@ import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent } from 'expo-spe
 import { useCallback, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 
+import { PALABRAS_DICTADO, fixDictation } from '@/lib/voice-text';
+
 const IDIOMA = 'es-PE';
 
 // Dictado por voz. Cada pantalla tiene su micrófono, pero como las pestañas siguen montadas,
@@ -11,6 +13,8 @@ export function useDictation(onFinal: (texto: string) => void) {
   const [escuchando, setEscuchando] = useState(false);
   const [parcial, setParcial] = useState('');
   const activo = useRef(false);
+  // Un solo resultado final por sesión: algunos celulares mandan el final dos veces.
+  const entregado = useRef(false);
 
   useSpeechRecognitionEvent('start', () => {
     if (activo.current) setEscuchando(true);
@@ -22,9 +26,12 @@ export function useDictation(onFinal: (texto: string) => void) {
   });
   useSpeechRecognitionEvent('result', (e) => {
     if (!activo.current) return;
-    const texto = e.results[0]?.transcript ?? '';
+    const texto = fixDictation(e.results[0]?.transcript ?? '');
     setParcial(texto);
-    if (e.isFinal && texto.trim()) onFinal(texto.trim());
+    if (e.isFinal && texto && !entregado.current) {
+      entregado.current = true;
+      onFinal(texto);
+    }
   });
   useSpeechRecognitionEvent('error', (e) => {
     if (!activo.current) return;
@@ -43,7 +50,17 @@ export function useDictation(onFinal: (texto: string) => void) {
     Speech.stop();
     setParcial('');
     activo.current = true;
-    ExpoSpeechRecognitionModule.start({ lang: IDIOMA, interimResults: true, addsPunctuation: true });
+    entregado.current = false;
+    ExpoSpeechRecognitionModule.start({
+      lang: IDIOMA,
+      interimResults: true,
+      addsPunctuation: true,
+      maxAlternatives: 1,
+      // Pistas para que entienda "SOAT", "brevete" o "Rímac" a la primera (Android 13+).
+      contextualStrings: PALABRAS_DICTADO,
+      // Corto antes cuando dejo de hablar: la respuesta llega más rápido.
+      androidIntentOptions: { EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS: 1500 },
+    });
   }, []);
 
   const parar = useCallback(() => {
