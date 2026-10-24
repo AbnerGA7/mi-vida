@@ -8,9 +8,13 @@ const modelPath = `${FileSystem.documentDirectory}${LOCAL_MODEL.file}`;
 let contextPromise: Promise<LlamaContext> | null = null;
 // El contexto de llama atiende una respuesta a la vez: encolo las demás en vez de chocarlas.
 let queue: Promise<unknown> = Promise.resolve();
+// Una vez que vi el archivo no vuelvo a tocar el disco en cada pregunta.
+let modelReady = false;
 
 export async function isLocalModelReady() {
-  return (await FileSystem.getInfoAsync(modelPath)).exists;
+  if (modelReady) return true;
+  modelReady = (await FileSystem.getInfoAsync(modelPath)).exists;
+  return modelReady;
 }
 
 const MODEL_BYTES = 2.1e9;
@@ -32,6 +36,7 @@ export async function downloadLocalModel(onProgress?: (fraction: number) => void
     throw new Error(`La descarga falló (${result?.status ?? 'sin respuesta'})`);
   }
   await FileSystem.moveAsync({ from: tempPath, to: modelPath });
+  modelReady = true;
 }
 
 export async function deleteLocalModel() {
@@ -41,6 +46,7 @@ export async function deleteLocalModel() {
     await (await contextPromise).release();
     contextPromise = null;
   }
+  modelReady = false;
   await FileSystem.deleteAsync(modelPath, { idempotent: true });
 }
 
