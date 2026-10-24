@@ -79,7 +79,7 @@ export type Answer = { texto: string; fuentes: Documento[]; source: AiSource | '
 
 // 1) Preguntas de siempre (vencimientos, qué tengo) → respuesta en código, al instante.
 // 2) Lo demás → busco los documentos y le paso a la IA local solo los trozos relevantes.
-export async function askDocuments(pregunta: string): Promise<Answer> {
+export async function askDocuments(pregunta: string, onToken?: (parcial: string) => void): Promise<Answer> {
   const todos = await listDocuments();
   const rapida = fastAnswer(pregunta, todos, new Date());
   if (rapida) return { texto: rapida.texto, fuentes: rapida.fuentes, source: 'reglas' };
@@ -112,7 +112,7 @@ export async function askDocuments(pregunta: string): Promise<Answer> {
       { role: 'system', content: SYSTEM },
       { role: 'user', content: `Hoy es ${formatFecha(today())}.\n\nFragmentos:\n${contexto}\n\nPregunta: ${pregunta}` },
     ],
-    { privado: true, maxTokens: 160, temperature: 0.1 },
+    { privado: true, maxTokens: 160, temperature: 0.1, onToken },
   );
   return { texto: text, fuentes, source };
 }
