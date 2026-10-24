@@ -5,6 +5,7 @@ import { Image } from 'expo-image';
 import { Alert, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 import { AssistantCard } from '@/components/assistant/assistant-card';
+import { ensureBriefTask } from '@/lib/background/brief-task';
 import { alpha, Badge, Body, Button, Card, Divider, Empty, Input, ListItem, Muted, Notice, Row, Screen, Stat, useModule, usePalette } from '@/components/ui/kit';
 import { Font, Spacing, Type } from '@/constants/theme';
 import { useLoader } from '@/hooks/use-loader';
@@ -97,7 +98,10 @@ export default function HoyScreen() {
     setTareas(t);
     setBrief(b);
     // La notificación se programa en segundo plano: nunca bloquea la pantalla.
-    scheduleMorningBrief(b).catch(() => {});
+    // Con permiso de notificaciones, también activo el recálculo de madrugada.
+    scheduleMorningBrief(b)
+      .then((ok) => ok && ensureBriefTask())
+      .catch(() => {});
     // La app abre en Hoy: aquí también dejo al día los avisos de vencimiento.
     listDocuments().then(scheduleExpiryReminders).catch(() => {});
   }, ['tareas', 'finanzas', 'documentos', 'coach']);
@@ -264,7 +268,7 @@ export default function HoyScreen() {
               <Body style={{ flex: 1 }}>{l}</Body>
             </Row>
           ))}
-          <Muted size={12}>Te llega cada día a las {BRIEF_HOUR}:00 y se actualiza cada vez que abres la app.</Muted>
+          <Muted size={12}>Te llega cada día a las {BRIEF_HOUR}:00. Se actualiza al abrir la app y también de madrugada, en segundo plano.</Muted>
           <Button
             label="Enviarme el resumen ahora"
             icon="bell-ring-outline"
