@@ -299,16 +299,16 @@ function WeeklyCheckin({ onSaved }: { onSaved: () => void }) {
 
   return (
     <Card title="Registro semanal" subtitle="Ajusto tu plan con reglas claras" icon="clipboard-check-outline" accent={m.solid} right={<Badge label={isoWeek()} color={m.solid} />}>
-      <Input icon="scale-bathroom" placeholder="Peso promedio de la semana (kg)" value={f.peso} onChangeText={set('peso')} keyboardType="decimal-pad" />
+      <Input icon="scale-bathroom" accent={m.solid} placeholder="Peso promedio de la semana (kg)" value={f.peso} onChangeText={set('peso')} keyboardType="decimal-pad" />
       <Row gap={10}>
         <View style={{ flex: 1 }}>
-          <Input icon="lightning-bolt-outline" placeholder="Energía 1-10" value={f.energia} onChangeText={set('energia')} keyboardType="number-pad" />
+          <Input icon="lightning-bolt-outline" accent={m.solid} placeholder="Energía 1-10" value={f.energia} onChangeText={set('energia')} keyboardType="number-pad" />
         </View>
         <View style={{ flex: 1 }}>
-          <Input icon="sleep" placeholder="Sueño 1-10" value={f.sueno} onChangeText={set('sueno')} keyboardType="number-pad" />
+          <Input icon="sleep" accent={m.solid} placeholder="Sueño 1-10" value={f.sueno} onChangeText={set('sueno')} keyboardType="number-pad" />
         </View>
       </Row>
-      <Input icon="note-edit-outline" placeholder="Notas (dolor, cómo te sentiste)" value={f.notas} onChangeText={set('notas')} />
+      <Input icon="note-edit-outline" accent={m.solid} placeholder="Notas (dolor, cómo te sentiste)" value={f.notas} onChangeText={set('notas')} />
       <Button label="Guardar y ajustar plan" icon="content-save-outline" color={m.solid} onPress={guardar} />
       <Muted size={12}>Te lo recuerdo cada domingo a las 6 pm.</Muted>
     </Card>
