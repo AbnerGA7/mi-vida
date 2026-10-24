@@ -1,7 +1,17 @@
 // Kit de UI de Mi Vida: todas las pantallas usan estas piezas para verse consistentes.
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import type { ComponentProps, ReactElement, ReactNode } from 'react';
+import { StatusBar } from 'expo-status-bar';
+import {
+  Children,
+  cloneElement,
+  isValidElement,
+  useEffect,
+  useState,
+  type ComponentProps,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -12,15 +22,43 @@ import {
   View,
   useColorScheme,
   type RefreshControlProps,
+  type StyleProp,
   type TextInputProps,
+  type TextStyle,
   type ViewStyle,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, {
+  cancelAnimation,
+  Extrapolation,
+  FadeInDown,
+  interpolate,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BottomTabInset, Colors, ModuleColors, Spacing, type ModuleKey } from '@/constants/theme';
+import {
+  BottomTabInset,
+  Colors,
+  Font,
+  ModuleColors,
+  Motion,
+  Radius,
+  Shadow,
+  Spacing,
+  Type,
+  type ModuleKey,
+} from '@/constants/theme';
 
 export type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 export type Palette = Record<keyof (typeof Colors)['light'], string>;
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function usePalette(): Palette & { dark: boolean } {
   const dark = useColorScheme() === 'dark';
@@ -30,7 +68,39 @@ export function usePalette(): Palette & { dark: boolean } {
 export function useModule(key: ModuleKey) {
   const { dark } = usePalette();
   const m = ModuleColors[key];
-  return { solid: m.solid, soft: dark ? m.softDark : m.soft };
+  return { solid: m.solid, soft: dark ? m.softDark : m.soft, gradient: m.gradient };
+}
+
+// Agrega transparencia a un color hex (#RRGGBB) con alfa entre 0 y 1.
+export function alpha(hex: string, a: number) {
+  return `${hex.slice(0, 7)}${Math.round(a * 255)
+    .toString(16)
+    .padStart(2, '0')}`;
+}
+
+// Oscurece un color hex para el final de un degradado.
+function shade(hex: string, amount = 0.22) {
+  const n = parseInt(hex.slice(1, 7), 16);
+  const f = (c: number) => Math.round(c * (1 - amount));
+  const r = f(n >> 16);
+  const g = f((n >> 8) & 255);
+  const b = f(n & 255);
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+}
+
+// Escala con resorte al presionar: la base de todo lo que se toca.
+function usePressScale(to = 0.97) {
+  const scale = useSharedValue(1);
+  const style = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  return {
+    style,
+    onPressIn: () => {
+      scale.value = withSpring(to, Motion.press);
+    },
+    onPressOut: () => {
+      scale.value = withSpring(1, Motion.press);
+    },
+  };
 }
 
 export function Icon({ name, size = 20, color }: { name: IconName; size?: number; color?: string }) {
@@ -38,7 +108,7 @@ export function Icon({ name, size = 20, color }: { name: IconName; size?: number
   return <MaterialCommunityIcons name={name} size={size} color={color ?? p.text} />;
 }
 
-// Pantalla con encabezado de color del módulo.
+// Aparece desde abajo con un pequeño retraso según su posición.
 export function Screen({
   module,
   icon,
@@ -88,15 +158,6 @@ export function Screen({
 }
 
 // Oscurece un color hex para el final del degradado.
-function shade(hex: string, amount = 0.28) {
-  const n = parseInt(hex.slice(1), 16);
-  const f = (c: number) => Math.round(c * (1 - amount));
-  const r = f(n >> 16);
-  const g = f((n >> 8) & 255);
-  const b = f(n & 255);
-  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
-}
-
 export function Card({
   title,
   icon,
@@ -315,9 +376,7 @@ export function Row({ children, gap = Spacing.two, style }: { children: ReactNod
 }
 
 const styles = StyleSheet.create({
-  content: { padding: Spacing.three, gap: Spacing.three, paddingBottom: BottomTabInset + Spacing.five },
   hero: { borderRadius: 24, padding: Spacing.four, marginBottom: Spacing.one },
-  heroRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   heroIcon: {
     width: 48,
     height: 48,
@@ -328,10 +387,10 @@ const styles = StyleSheet.create({
   },
   heroTitle: { color: '#FFFFFF', fontSize: 26, fontWeight: '800' },
   heroSubtitle: { color: 'rgba(255,255,255,0.9)', fontSize: 14, marginTop: 2 },
+  content: { padding: Spacing.three, gap: Spacing.three, paddingBottom: BottomTabInset + Spacing.five },
   card: { borderRadius: 20, padding: Spacing.three + 2, gap: Spacing.two + 2, borderWidth: StyleSheet.hairlineWidth },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   cardIcon: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  cardTitle: { fontSize: 17, fontWeight: '700', flex: 1 },
   button: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -358,4 +417,7 @@ const styles = StyleSheet.create({
   item: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.two },
   itemIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   empty: { alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.four },
+
+  heroRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
+  cardTitle: { fontSize: 17, fontWeight: '700', flex: 1 },
 });
