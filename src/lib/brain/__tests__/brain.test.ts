@@ -189,3 +189,61 @@ describe('fecha de vencimiento', () => {
     expect(findExpiration('Fecha de nacimiento 12/05/1998')).toBeNull();
   });
 });
+
+
+const DOCS: DocLite[] = [
+  { id: 1, nombre: 'SOAT 24/10/2026', categoria: 'Seguros', resumen: 'SOAT · Rímac · placa ABC-123', texto: MUESTRAS[0].texto, fecha_vencimiento: '2027-03-15' },
+  { id: 2, nombre: 'dni.jpg', categoria: 'Identidad y trámites', resumen: 'DNI', texto: MUESTRAS[3].texto, fecha_vencimiento: '2028-02-03' },
+  { id: 3, nombre: 'recibo.jpg', categoria: 'Hogar', resumen: 'Recibo de luz', texto: MUESTRAS[6].texto, fecha_vencimiento: '2026-10-20' },
+  { id: 4, nombre: 'eps.pdf', categoria: 'Seguros', resumen: 'Seguro de salud · Pacífico', texto: MUESTRAS[8].texto, fecha_vencimiento: '2026-12-31' },
+];
+
+describe('preguntas', () => {
+  test('detecta la intención', () => {
+    expect(detectIntent('¿Cuándo vence mi SOAT?')).toBe('vencimiento');
+    expect(detectIntent('hasta cuando es mi dni')).toBe('vencimiento');
+    expect(detectIntent('¿mi soat está vigente?')).toBe('vigente');
+    expect(detectIntent('¿qué documentos se vencen pronto?')).toBe('por_vencer');
+    expect(detectIntent('¿qué documentos tengo?')).toBe('listar');
+    expect(detectIntent('¿cuánto pago de alquiler?')).toBeNull();
+  });
+
+  test('reconoce el documento en la pregunta', () => {
+    expect(tipoDesdePregunta('¿cuándo vence mi soat?')).toBe('SOAT');
+    expect(tipoDesdePregunta('cuando vence mi licencia de conducir')).toBe('Brevete');
+    expect(tipoDesdePregunta('mi revisión técnica está vigente')).toBe('Revisión técnica');
+    expect(tipoDesdePregunta('¿cuándo vence mi seguro de salud?')).toBe('Seguro de salud');
+  });
+
+  test('"¿cuándo vence mi SOAT?" se responde sin IA', () => {
+    const r = fastAnswer('¿Cuándo vence mi SOAT?', DOCS, HOY)!;
+    expect(r.texto).toBe('Tu SOAT vence el 15 de marzo de 2027, en 142 días.');
+    expect(r.fuentes.map((d) => d.id)).toEqual([1]);
+  });
+
+  test('vigente / vencido', () => {
+    expect(fastAnswer('¿mi soat está vigente?', DOCS, HOY)!.texto).toStartWith('Sí, tu SOAT está vigente');
+    expect(fastAnswer('¿cuándo vence mi brevete?', DOCS, HOY)!.texto).toStartWith('No tengo tu Brevete guardado');
+  });
+
+  test('qué vence pronto', () => {
+    const r = fastAnswer('¿qué se vence pronto?', DOCS, HOY)!;
+    expect(r.fuentes.map((d) => d.id)).toEqual([3]);
+    expect(r.texto).toContain('venció el 20 de octubre de 2026 (hace 4 días)');
+  });
+
+  test('preguntas abiertas van a la IA', () => {
+    expect(fastAnswer('¿cuánto pago de alquiler?', DOCS, HOY)).toBeNull();
+  });
+
+  test('búsqueda sin palabras vacías y con sinónimos', () => {
+    expect(toFtsQuery('¿cuánto pago de alquiler?')).toBe('"pago"* OR "alquiler"* OR "arrendamiento"* OR "merced"*');
+  });
+
+  test('a la IA le mando solo los trozos relevantes', () => {
+    const largo = `${'relleno sin importancia\n'.repeat(80)}CLAUSULA TERCERA: La merced conductiva es de S/ 1,200.00\n${'más relleno\n'.repeat(80)}`;
+    const p = pasajes(largo, '¿cuánto pago de alquiler?', 300);
+    expect(p).toContain('merced conductiva es de S/ 1,200.00');
+    expect(p.length).toBeLessThanOrEqual(300);
+  });
+});
