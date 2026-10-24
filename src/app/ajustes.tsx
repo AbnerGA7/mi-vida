@@ -2,9 +2,10 @@ import NetInfo from '@react-native-community/netinfo';
 import { Image } from 'expo-image';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Alert, View } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 
-import { Badge, Body, Button, Card, ListItem, Muted, Progress, Row, Screen, useModule, usePalette } from '@/components/ui/kit';
+import { Badge, Body, Button, Card, Divider, Icon, ListItem, Muted, Progress, Row, Screen, Skeleton, useModule, usePalette } from '@/components/ui/kit';
+import { Font, Type } from '@/constants/theme';
 import { askAi } from '@/lib/ai';
 import { hasCloudKey } from '@/lib/ai/cloud';
 import { deleteLocalModel, downloadLocalModel, hasSpaceForModel, isLocalModelReady } from '@/lib/ai/local';
@@ -88,24 +89,31 @@ export default function AjustesScreen() {
   const estado = (ok: boolean, si: string, no: string) => <Badge label={ok ? si : no} color={ok ? p.success : p.danger} />;
 
   return (
-    <Screen module="ajustes" icon="cog-outline" title="Ajustes" subtitle="IA, cuenta y seguridad">
-      <Card>
-        <Row gap={14}>
-          {user?.picture ? (
-            <Image source={{ uri: user.picture }} style={{ width: 56, height: 56, borderRadius: 28 }} />
-          ) : (
-            <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: p.primarySoft }} />
-          )}
-          <View style={{ flex: 1 }}>
-            <Body bold>{user?.name ?? 'Mi cuenta'}</Body>
-            <Muted>{user?.email}</Muted>
+    <Screen
+      module="ajustes"
+      icon="cog-outline"
+      eyebrow="Ajustes"
+      title={user?.name ?? 'Mi cuenta'}
+      subtitle={user?.email}
+      right={
+        user?.picture ? (
+          <Image source={{ uri: user.picture }} style={styles.avatar} />
+        ) : (
+          <View style={[styles.avatar, styles.avatarEmpty]}>
+            <Icon name="account" size={22} color="#FFFFFF" />
           </View>
+        )
+      }
+      hero={
+        <Row gap={8} style={{ flexWrap: 'wrap' }}>
+          <HeroPill icon="shield-lock-outline" label="Cifrado" />
+          <HeroPill icon="fingerprint" label="Huella" />
+          <HeroPill icon={listo ? 'chip' : 'cloud-outline'} label={listo ? 'IA local lista' : 'IA en la nube'} />
         </Row>
-      </Card>
-
-      <Card title="IA local (sin internet)" icon="chip" accent={p.primary}>
+      }>
+      <Card title="IA local" subtitle="Funciona sin internet" icon="chip" accent={p.primary}>
         <Muted>{LOCAL_MODEL.name} · ~2 GB · corre dentro del celular</Muted>
-        {listo === null ? <ActivityIndicator /> : null}
+        {listo === null ? <Skeleton height={26} width="45%" radius={13} /> : null}
         {listo !== null && progreso === null ? (
           <Row>{estado(listo, 'Descargada y lista', 'No descargada')}</Row>
         ) : null}
@@ -144,3 +152,28 @@ export default function AjustesScreen() {
     </Screen>
   );
 }
+
+function HeroPill({ icon, label }: { icon: Parameters<typeof Icon>[0]['name']; label: string }) {
+  return (
+    <View style={styles.pill}>
+      <Icon name={icon} size={14} color="#FFFFFF" />
+      <Text style={[Type.caption, { color: '#FFFFFF', fontFamily: Font.semibold }]}>{label}</Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  avatar: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: 'rgba(255,255,255,0.6)' },
+  avatarEmpty: { backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+});
