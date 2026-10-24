@@ -61,4 +61,9 @@ describe('registro rápido sin IA', () => {
     expect(parseSimple('pagué con tarjeta 80 zapatillas')).toMatchObject({ categoria: 'ropa' });
     expect(parseSimple('150 de la tarjeta')).toMatchObject({ categoria: 'deudas' });
   });
+
+  test('entiende yape y plin dichos como verbo', () => {
+    expect(parseSimple('me yapearon 50')).toMatchObject({ tipo: 'ingreso', cuenta: 'yape' });
+    expect(parseSimple('le pliné 20 por el taxi')).toMatchObject({ categoria: 'transporte', cuenta: 'plin' });
+  });
 });

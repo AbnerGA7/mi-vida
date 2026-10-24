@@ -1,6 +1,6 @@
 import { askAi, parseJsonLoose } from '@/lib/ai';
 import { CATEGORIAS, CUENTAS, type NewTransaction } from '@/lib/finance/repository';
-import { CUENTA_ALIAS, findMonto, parseSimple, sinTildes, today } from '@/lib/finance/simple-capture';
+import { findCuenta, findMonto, parseSimple, sinTildes, today } from '@/lib/finance/simple-capture';
 
 export { parseSimple, today };
 
@@ -59,7 +59,7 @@ export async function quickCapture(texto: string): Promise<CaptureResult> {
     return { ...(await parseWithAi(texto)), conIa: true };
   } catch {
     const words = sinTildes(texto).split(/[^a-z0-9]+/);
-    const cuenta = words.map((w) => CUENTA_ALIAS[w]).find(Boolean) ?? 'efectivo';
+    const cuenta = findCuenta(words);
     return { fecha: today(), monto, tipo: 'gasto', descripcion: texto.trim(), categoria: 'otros', cuenta, conIa: false };
   }
 }
