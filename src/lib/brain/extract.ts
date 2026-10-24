@@ -7,7 +7,7 @@ import PdfThumbnail from 'react-native-pdf-thumbnail';
 
 import { askAi, parseJson } from '@/lib/ai';
 import { extractPdfTextCloud, hasCloudKey } from '@/lib/ai/cloud';
-import { CATEGORIAS_DOC } from '@/lib/brain/classify';
+import { CATEGORIAS_DOC, classifyByRules, resumenPorReglas } from '@/lib/brain/classify';
 import { findExpiration } from '@/lib/brain/dates';
 
 export { CATEGORIAS_DOC } from '@/lib/brain/classify';
@@ -29,6 +29,7 @@ export type AskCloud = (nombre: string) => Promise<boolean>;
 const DOCS_DIR = `${FileSystem.documentDirectory}docs/`;
 // Con menos de esto asumo que el OCR no pudo leer el PDF (letra muy chica o escaneo borroso).
 const MIN_TEXTO_UTIL = 80;
+
 
 export async function scanWithCamera(): Promise<PickedFile | null> {
   const perm = await ImagePicker.requestCameraPermissionsAsync();
@@ -110,24 +111,33 @@ const SCHEMA = {
   required: ['categoria', 'resumen'],
 };
 
+// Primero reglas en código (instantáneo y sin IA). Si no están seguras, le pregunto a la IA local
+// pasándole lo que creen las reglas; si la IA no está descargada, me quedo con la mejor pista.
 async function classify(nombre: string, texto: string) {
-  if (!texto.trim()) return { categoria: 'Notas personales', resumen: 'Sin texto leído todavía' };
+  if (!texto.trim()) return { categoria: 'Notas personales', resumen: 'Sin texto leído todavía', tipo: null, vigenciaAnios: undefined };
+  const reglas = classifyByRules(nombre, texto);
+  const porReglas = { categoria: reglas.categoria, resumen: resumenPorReglas(reglas.tipo, texto, nombre), tipo: reglas.tipo, vigenciaAnios: reglas.vigenciaAnios };
+  if (reglas.seguro) return porReglas;
   try {
     // Clasifico siempre con IA local: el texto de mis papeles no sale del celular para esto.
+    const pista = reglas.tipo ? `\nPista (puede estar mal): parece ${reglas.tipo}.` : '';
     const { text } = await askAi(
       [
         { role: 'system', content: SYSTEM },
-        { role: 'user', content: `Nombre: ${nombre}\n\n${texto.slice(0, 3000)}` },
+        { role: 'user', content: `Nombre del archivo: ${nombre}${pista}\n\n${texto.slice(0, 2000)}` },
       ],
       { privado: true, maxTokens: 96, temperature: 0, json: SCHEMA },
     );
     const json = parseJson(text);
+    const categoria = CATEGORIAS_DOC.find((c) => c === json.categoria);
     return {
-      categoria: CATEGORIAS_DOC.includes(json.categoria) ? json.categoria : 'Notas personales',
-      resumen: String(json.resumen || nombre),
+      categoria: categoria ?? porReglas.categoria,
+      resumen: String(json.resumen || porReglas.resumen).slice(0, 120),
+      tipo: reglas.tipo,
+      vigenciaAnios: reglas.vigenciaAnios,
     };
   } catch {
-    return { categoria: 'Notas personales', resumen: nombre };
+    return porReglas;
   }
 }
 
@@ -138,8 +148,8 @@ export async function extractFromStored(
   askCloud?: AskCloud,
 ): Promise<ExtractedDocument> {
   const texto = await readText(mime, ruta, nombre, askCloud);
-  const { categoria, resumen } = await classify(nombre, texto);
-  return { nombre, ruta, texto, categoria, resumen, fecha_vencimiento: findExpiration(texto) };
+  const { categoria, resumen, vigenciaAnios } = await classify(nombre, texto);
+  return { nombre, ruta, texto, categoria, resumen, fecha_vencimiento: findExpiration(texto, { vigenciaAnios }) };
 }
 
 export async function processFile(file: PickedFile, askCloud?: AskCloud): Promise<ExtractedDocument> {
