@@ -209,14 +209,19 @@ export default function CerebroScreen() {
       )}
 
       <Row gap={10}>
-        <Button label="Escanear" icon="camera-outline" color={m.solid} style={{ flex: 1 }} onPress={() => agregar(scanWithCamera)} />
-        <Button label="Subir" icon="paperclip" variant="secondary" style={{ flex: 1 }} onPress={() => agregar(pickFile)} />
+        <Button label="Escanear" icon="camera-outline" color={m.solid} style={{ flex: 1 }} disabled={procesando} onPress={() => agregar(scanWithCamera)} />
+        <Button label="Subir" icon="paperclip" variant="secondary" style={{ flex: 1 }} disabled={procesando} onPress={() => agregar(pickFile)} />
       </Row>
       {procesando ? (
-        <Row style={{ justifyContent: 'center' }}>
-          <ActivityIndicator color={m.solid} />
-          <Muted>Leyendo y clasificando…</Muted>
-        </Row>
+        <Card variant="tinted" accent={m.solid}>
+          <Row gap={12}>
+            <ActivityIndicator color={m.solid} />
+            <View style={{ flex: 1 }}>
+              <Body bold>Leyendo y clasificando…</Body>
+              <Muted size={12}>OCR y IA local, sin salir del celular</Muted>
+            </View>
+          </Row>
+        </Card>
       ) : null}
 
       <Card title="Mis documentos" icon="folder-outline" accent={m.solid} right={<Badge label={String(docs.length)} color={m.solid} />}>
