@@ -1,7 +1,8 @@
 import * as FileSystem from 'expo-file-system/legacy';
 
 import { askAi, type AiSource } from '@/lib/ai';
-import { pasajes, toFtsQuery } from '@/lib/brain/answer';
+import { docsDeTipo, fastAnswer, pasajes, toFtsQuery } from '@/lib/brain/answer';
+import { tipoDesdePregunta } from '@/lib/brain/classify';
 import type { ExtractedDocument } from '@/lib/brain/extract';
 import { getDb } from '@/lib/db';
 
@@ -73,10 +74,21 @@ const SYSTEM = `Respondes preguntas sobre MIS documentos personales usando SOLO 
 - Nunca muestres números completos de DNI, cuentas o tarjetas: solo los últimos 4 dígitos.
 - No des interpretaciones legales.`;
 
-export type Answer = { texto: string; fuentes: Documento[]; source: AiSource | null };
+export type Answer = { texto: string; fuentes: Documento[]; source: AiSource | 'reglas' | null };
 
+// 1) Preguntas de siempre (vencimientos, qué tengo) → respuesta en código, al instante.
+// 2) Lo demás → busco los documentos y le paso a la IA local solo los trozos relevantes.
 export async function askDocuments(pregunta: string): Promise<Answer> {
-  const fuentes = await searchDocuments(pregunta);
+  const todos = await listDocuments();
+  const rapida = fastAnswer(pregunta, todos, new Date());
+  if (rapida) return { texto: rapida.texto, fuentes: rapida.fuentes, source: 'reglas' };
+
+  // Si la pregunta nombra un tipo de documento ("mi brevete"), ese va primero aunque FTS no lo encuentre.
+  const tipo = tipoDesdePregunta(pregunta);
+  const delTipo = tipo ? docsDeTipo(tipo, todos) : [];
+  const encontrados = await searchDocuments(pregunta);
+  const fuentes = [...delTipo, ...encontrados.filter((d) => !delTipo.some((t) => t.id === d.id))].slice(0, 4);
+
   if (fuentes.length === 0) {
     return { texto: 'No lo encuentro en tus documentos. Sube o escanea el documento relacionado.', fuentes, source: null };
   }
