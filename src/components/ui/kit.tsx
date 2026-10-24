@@ -212,6 +212,7 @@ export function Button({
   onPress,
   icon,
   variant = 'primary',
+  size = 'md',
   loading,
   disabled,
   color,
@@ -221,36 +222,57 @@ export function Button({
   onPress: () => void;
   icon?: IconName;
   variant?: ButtonVariant;
+  size?: 'md' | 'sm';
   loading?: boolean;
   disabled?: boolean;
   color?: string;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }) {
   const p = usePalette();
+  const press = usePressScale();
   const base = color ?? p.primary;
-  const bg = { primary: base, secondary: p.backgroundSelected, ghost: 'transparent', danger: p.danger + '1A' }[variant];
+  const bg = { primary: base, secondary: p.backgroundSelected, ghost: 'transparent', danger: alpha(p.danger, 0.12) }[variant];
   const fg = { primary: '#FFFFFF', secondary: p.text, ghost: base, danger: p.danger }[variant];
+  const off = disabled || loading;
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={onPress}
-      disabled={disabled || loading}
-      style={({ pressed }) => [
+      onPressIn={press.onPressIn}
+      onPressOut={press.onPressOut}
+      disabled={off}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: !!off, busy: !!loading }}
+      style={[
         styles.button,
-        { backgroundColor: bg, opacity: disabled ? 0.5 : pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] },
+        size === 'sm' ? styles.buttonSm : null,
+        { backgroundColor: bg, opacity: disabled ? 0.45 : 1 },
+        variant === 'primary' && !p.dark ? { boxShadow: `0px 8px 20px -8px ${alpha(base, 0.7)}` } : null,
+        press.style,
         style,
       ]}>
+      {variant === 'primary' ? (
+        <LinearGradient
+          colors={[base, shade(base)]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[StyleSheet.absoluteFill, { borderRadius: Radius.md }]}
+        />
+      ) : null}
       {loading ? (
         <ActivityIndicator color={fg} />
       ) : (
         <>
-          {icon ? <MaterialCommunityIcons name={icon} size={20} color={fg} /> : null}
-          <Text style={[styles.buttonLabel, { color: fg }]}>{label}</Text>
+          {icon ? <MaterialCommunityIcons name={icon} size={size === 'sm' ? 18 : 20} color={fg} /> : null}
+          <Text style={[size === 'sm' ? styles.buttonLabelSm : styles.buttonLabel, { color: fg }]} numberOfLines={1}>
+            {label}
+          </Text>
         </>
       )}
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
+// Botón redondo solo con ícono.
 export function Input({ icon, style, accent, onFocus, onBlur, ...props }: TextInputProps & { icon?: IconName; accent?: string }) {
   const p = usePalette();
   const [focus, setFocus] = useState(false);
@@ -641,11 +663,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.two,
-    borderRadius: 14,
-    paddingVertical: 14,
-    paddingHorizontal: Spacing.four,
+    borderRadius: Radius.md,
+    minHeight: 52,
+    paddingHorizontal: Spacing.four - 4,
   },
-  buttonLabel: { fontSize: 16, fontWeight: '700' },
+  buttonSm: { minHeight: 40, paddingHorizontal: Spacing.three - 2, borderRadius: Radius.sm + 2 },
+  buttonLabel: { fontFamily: Font.bold, fontSize: 15.5, letterSpacing: -0.1 },
+  buttonLabelSm: { fontFamily: Font.semibold, fontSize: 14 },
   input: {
     flexDirection: 'row',
     alignItems: 'center',
