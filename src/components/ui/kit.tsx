@@ -658,6 +658,7 @@ export function ListItem({
   onPress,
   onLongPress,
   done,
+  hint,
 }: {
   icon?: IconName;
   iconColor?: string;
@@ -667,6 +668,7 @@ export function ListItem({
   onPress?: () => void;
   onLongPress?: () => void;
   done?: boolean;
+  hint?: string;
 }) {
   const p = usePalette();
   const c = iconColor ?? p.primary;
@@ -676,6 +678,14 @@ export function ListItem({
       onPress={onPress}
       onLongPress={onLongPress}
       disabled={!interactive}
+      accessibilityRole={interactive ? 'button' : undefined}
+      accessibilityLabel={typeof subtitle === 'string' ? `${title}. ${subtitle}` : title}
+      accessibilityHint={hint}
+      accessibilityState={done !== undefined ? { checked: done } : undefined}
+      accessibilityActions={onLongPress ? [{ name: 'longpress', label: 'Más opciones' }] : undefined}
+      onAccessibilityAction={(e) => {
+        if (e.nativeEvent.actionName === 'longpress') onLongPress?.();
+      }}
       android_ripple={interactive ? { color: p.overlay, borderless: false } : undefined}
       style={({ pressed }) => [styles.item, pressed && interactive ? { backgroundColor: p.overlay } : null]}>
       {icon ? (
