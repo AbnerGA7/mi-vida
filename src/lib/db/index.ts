@@ -92,6 +92,11 @@ const MIGRATIONS = [
     contenido TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );`,
+  // v4: índices para las consultas de cada pantalla (mes de movimientos, tareas pendientes, series).
+  `CREATE INDEX IF NOT EXISTS idx_transactions_fecha ON transactions (fecha);
+  CREATE INDEX IF NOT EXISTS idx_tasks_pendientes ON tasks (hecha, fecha_limite);
+  CREATE INDEX IF NOT EXISTS idx_workout_logs_fecha ON workout_logs (fecha);
+  CREATE INDEX IF NOT EXISTS idx_workout_logs_ejercicio ON workout_logs (ejercicio, fecha);`,
 ];
 
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
